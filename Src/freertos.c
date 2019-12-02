@@ -49,13 +49,19 @@
 
 /* USER CODE END Variables */
 osThreadId defaultTaskHandle;
+osThreadId PID_TASKHandle;
+osThreadId LOGICTASKHandle;
+osThreadId DETECTASKHandle;
 
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
    
 /* USER CODE END FunctionPrototypes */
 
-void StartDefaultTask(void const * argument);
+void debug_task(void const * argument);
+void pid_handle_task(void const * argument);
+void logic_handle_task(void const * argument);
+void detect_task(void const * argument);
 
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
@@ -115,8 +121,20 @@ void MX_FREERTOS_Init(void) {
 
   /* Create the thread(s) */
   /* definition and creation of defaultTask */
-  osThreadDef(defaultTask, StartDefaultTask, osPriorityNormal, 0, 128);
+  osThreadDef(defaultTask, debug_task, osPriorityNormal, 0, 128);
   defaultTaskHandle = osThreadCreate(osThread(defaultTask), NULL);
+
+  /* definition and creation of PID_TASK */
+  osThreadDef(PID_TASK, pid_handle_task, osPriorityIdle, 0, 256);
+  PID_TASKHandle = osThreadCreate(osThread(PID_TASK), NULL);
+
+  /* definition and creation of LOGICTASK */
+  osThreadDef(LOGICTASK, logic_handle_task, osPriorityIdle, 0, 256);
+  LOGICTASKHandle = osThreadCreate(osThread(LOGICTASK), NULL);
+
+  /* definition and creation of DETECTASK */
+  osThreadDef(DETECTASK, detect_task, osPriorityIdle, 0, 128);
+  DETECTASKHandle = osThreadCreate(osThread(DETECTASK), NULL);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
@@ -124,22 +142,77 @@ void MX_FREERTOS_Init(void) {
 
 }
 
-/* USER CODE BEGIN Header_StartDefaultTask */
+/* USER CODE BEGIN Header_debug_task */
 /**
   * @brief  Function implementing the defaultTask thread.
   * @param  argument: Not used 
   * @retval None
   */
-/* USER CODE END Header_StartDefaultTask */
-void StartDefaultTask(void const * argument)
+/* USER CODE END Header_debug_task */
+void debug_task(void const * argument)
 {
-  /* USER CODE BEGIN StartDefaultTask */
+  /* USER CODE BEGIN debug_task */
+  /* Infinite loop */
+  for(;;)
+  {
+	//	HAL_GPIO_TogglePin(RED_GPIO_Port,RED_Pin);
+    osDelay(200);
+  }
+  /* USER CODE END debug_task */
+}
+
+/* USER CODE BEGIN Header_pid_handle_task */
+/**
+* @brief Function implementing the PID_TASK thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_pid_handle_task */
+__weak void pid_handle_task(void const * argument)
+{
+  /* USER CODE BEGIN pid_handle_task */
   /* Infinite loop */
   for(;;)
   {
     osDelay(1);
   }
-  /* USER CODE END StartDefaultTask */
+  /* USER CODE END pid_handle_task */
+}
+
+/* USER CODE BEGIN Header_logic_handle_task */
+/**
+* @brief Function implementing the LOGICTASK thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_logic_handle_task */
+__weak void logic_handle_task(void const * argument)
+{
+  /* USER CODE BEGIN logic_handle_task */
+  /* Infinite loop */
+  for(;;)
+  {
+    osDelay(1);
+  }
+  /* USER CODE END logic_handle_task */
+}
+
+/* USER CODE BEGIN Header_detect_task */
+/**
+* @brief Function implementing the DETECTASK thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_detect_task */
+__weak void detect_task(void const * argument)
+{
+  /* USER CODE BEGIN detect_task */
+  /* Infinite loop */
+  for(;;)
+  {
+    osDelay(1);
+  }
+  /* USER CODE END detect_task */
 }
 
 /* Private application code --------------------------------------------------*/
