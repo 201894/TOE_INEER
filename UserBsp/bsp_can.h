@@ -12,30 +12,41 @@
 
 #include "stm32f4xx_hal.h"
 
-#define     LeftUpLift       0
-#define     RightUpLift      1
-#define     LeftFlip         2
-#define     RightFlip        3
-#define     MidSlip          4
-
-#define    UpLift    0
-#define    Flip      1
-#define    Slip      2
-
+typedef enum
+{
+  LeftUpLift        = 0,  //
+  RightUpLift       = 1,	
+	LeftFlip          = 2,  
+	RightFlip         = 3,
+	MidSlip           = 4,
+	MaxId             = 10,
+}module_id;
 
 typedef enum
 {
-  CAN_3508_M1_ID                    = 0x201,
-	
+  UpLift        = 0,  //
+  Flip          = 1,	
+	Slip          = 2,  
+
+}module_part_id;
+
+typedef enum
+{
+
+  CAN_UPLIFT_M1_ID          = 0x207,  //
+  CAN_UPLIFT_M2_ID          = 0x208,	
+	CAN_MASTER_M1_ID          = 0x301,  // 主机信息接收 id
+	CAN_MASTER_M2_ID          = 0x302,
+	CAN_SEND_M1_ID            = 0x311,
+	CAN_SEND_M2_ID            = 0x312,	
 } can_msg_id2;
 
 typedef enum
 {
-  CAN_UPLIFT_M1_ID          = 0x201,  //
-  CAN_UPLIFT_M2_ID          = 0x202,
-  CAN_FLIP_M1_ID            = 0x203,	
-	CAN_FLIP_M2_ID            = 0x204,
-  CAN_3508_SLIP_ID          = 0x205, 	
+
+  CAN_FLIP_M1_ID            = 0x201,	
+	CAN_FLIP_M2_ID            = 0x202,
+  CAN_3508_SLIP_ID          = 0x203, 	
 } can_msg_id1;
 
 typedef union
@@ -240,7 +251,7 @@ typedef __packed struct
 	uint8_t data[112];
 } robot_interactive_data_t;
 
-extern moto_param    MotoParam[5];
+extern moto_param    MotoData[5];
 extern wl4data   data4bytes;
 extern wl2data   data2bytes;
 extern ext_game_state_t               ext_game_state;
@@ -257,6 +268,8 @@ void send_gimbal_ms(uint32_t id,uint8_t data[8]);
 void send_chassis_ms(uint32_t id,uint8_t data[8]);
 void encoder_data_handle(moto_param* ptr,uint8_t RxData[8]);
 void gyro_data_handle(wl2data* ptr,wl4data* ptrr,gyro_param* gyro,uint8_t RxData[8]);
-void send_ctrl_cur(uint32_t id,int16_t iq1, int16_t iq2, int16_t iq3, int16_t iq4);  //CAN 1
+void send_can1_cur(uint32_t id,int16_t iq1, int16_t iq2, int16_t iq3, int16_t iq4);  //CAN 1
+void send_can2_cur(uint32_t id,int16_t iq1, int16_t iq2, int16_t iq3, int16_t iq4);  //CAN 2
+
 void send_405(uint32_t id,uint8_t data[8]);
 #endif

@@ -30,6 +30,9 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "bsp_uart.h"
+#include "bsp_io.h"
+#include "bsp_can.h"
 
 /* USER CODE END Includes */
 
@@ -102,7 +105,10 @@ int main(void)
   MX_SPI5_Init();
   MX_UART7_Init();
   /* USER CODE BEGIN 2 */
-
+	
+  USER_DMA_INIT(&BT_usart,&BT_DMA_HANDLE,uart6_buff,BT_BUFFER_LEN);
+	
+	can_receive_start();
   /* USER CODE END 2 */
 
   /* Call init function for freertos objects (in freertos.c) */

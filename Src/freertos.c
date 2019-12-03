@@ -26,6 +26,11 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */     
+#include "bsp_uart.h"
+#include "STMGood.h"
+#include "bsp_can.h"
+#include "pid.h"
+#include "detect_task.h"
 
 /* USER CODE END Includes */
 
@@ -155,7 +160,34 @@ void debug_task(void const * argument)
   /* Infinite loop */
   for(;;)
   {
-	//	HAL_GPIO_TogglePin(RED_GPIO_Port,RED_Pin);
+		/*
+		typedef enum
+		{
+			LeftUpLift        = 0,  //
+			RightUpLift       = 1,	
+			LeftFlip          = 2,  
+			RightFlip         = 3,
+			MidSlip           = 4,
+			MaxId             = 10,
+		}module_id;
+		*/		
+		/* FPS */
+    #if 1
+			printf("FPS[LeftUpLift] 	= %d \r\n",g_fps[0].fps);
+			printf("FPS[RightUpLift] 	= %d \r\n",g_fps[1].fps);		
+			printf("FPS[LeftFlip] 		= %d \r\n",g_fps[2].fps);
+			printf("FPS[RightFlip] 		= %d \r\n",g_fps[3].fps);
+			printf("FPS[MidSlip] 			= %d \r\n",g_fps[4].fps);
+		#endif
+		/* CAN  INFORMATION */		
+    #if 1
+			printf("MotoData[LeftUpLift] 	= %d \r\n",MotoData[LeftUpLift].ecd);
+			printf("MotoData[RightUpLift] = %d \r\n",MotoData[RightUpLift].ecd);		
+			printf("MotoData[LeftFlip] 		= %d \r\n",MotoData[LeftFlip].ecd);		
+			printf("MotoData[RightFlip] 	= %d \r\n",MotoData[RightFlip].ecd);		
+			printf("MotoData[MidSlip] 		= %d \r\n",MotoData[MidSlip].ecd);					
+		#endif		
+		
     osDelay(200);
   }
   /* USER CODE END debug_task */

@@ -12,9 +12,9 @@
 #define __DETECT_TASK_H__
 
 #include "stm32f4xx_hal.h"
-
+#include "bsp_can.h"
 /* detect task period time (ms) */
-#define DETECT_TASK_PERIOD 1000
+
 
 typedef enum
 {
@@ -73,11 +73,22 @@ typedef struct
   uint16_t beep_ctrl;
 } global_err_t;
 
+typedef struct
+{
+  /* error alarm relevant */
+  uint16_t fps;
+  uint16_t cnt;
+  uint16_t beep_ctrl;
+	
+} global_fps_t;
+
 extern global_err_t g_err;
+extern global_fps_t g_fps[MaxId];
 void detector_init(void);
 void err_detector_hook(int err_id);
-
 void detector_param_init(void);
 static void module_offline_callback(void);
 static void module_offline_detect(void);
+static void module_fps_detect(void);
+static void module_fps_clear(void);
 #endif

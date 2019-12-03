@@ -33,6 +33,7 @@ toe_ineer\detect_task.o: ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_spi.h
 toe_ineer\detect_task.o: ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_tim.h
 toe_ineer\detect_task.o: ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_tim_ex.h
 toe_ineer\detect_task.o: ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_uart.h
+toe_ineer\detect_task.o: ..\UserBsp\bsp_can.h
 toe_ineer\detect_task.o: ../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS/cmsis_os.h
 toe_ineer\detect_task.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/FreeRTOS.h
 toe_ineer\detect_task.o: ../Inc/FreeRTOSConfig.h
@@ -51,3 +52,4 @@ toe_ineer\detect_task.o: ..\UserBsp\bsp_io.h
 toe_ineer\detect_task.o: ../Inc/gpio.h
 toe_ineer\detect_task.o: ../Inc/main.h
 toe_ineer\detect_task.o: ../Inc/tim.h
+toe_ineer\detect_task.o: E:\Keil\ARM\ARMCC\Bin\..\include\string.h

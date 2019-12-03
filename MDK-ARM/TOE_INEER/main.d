@@ -53,3 +53,7 @@ toe_ineer\main.o: ../Inc/spi.h
 toe_ineer\main.o: ../Inc/tim.h
 toe_ineer\main.o: ../Inc/usart.h
 toe_ineer\main.o: ../Inc/gpio.h
+toe_ineer\main.o: ..\UserBsp\bsp_uart.h
+toe_ineer\main.o: E:\Keil\ARM\ARMCC\Bin\..\include\stdio.h
+toe_ineer\main.o: ..\UserBsp\bsp_io.h
+toe_ineer\main.o: ..\UserBsp\bsp_can.h

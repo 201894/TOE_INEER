@@ -14,7 +14,7 @@
 #include "pid.h"
 #include "STMGood.h"
 
-#define     PID_TASK_PERIOD 5
+#define     PID_TASK_PERIOD 50
 //#define     LeftUpLift       0
 //#define     RightUpLift      1
 //#define     LeftFlip         2
@@ -32,33 +32,33 @@ void pid_handle_task(void const * argument)
   {
 		PidHandleLastWakeTime = xTaskGetTickCount();		
 		taskENTER_CRITICAL();
-		
-		
+		if (MotoData[LeftUpLift].ecd > 4192)
+		     HAL_GPIO_TogglePin(GREEN_GPIO_Port,GREEN_Pin);
 		/* 抬升电机 及 翻转电机 控制策略 ：		
 		    使用一个电机的外环误差值，作为内环控制的目标值
 		*/
 		
 		/* 抬升电机PID控制    外环   理论目标位置           --        电机反馈位置  */
-		pid_ast(&pid_out[UpLift],moto_ctrl[UpLift].target,MotoParam[LeftUpLift].total_angle); 
+		pid_ast(&pid_out[UpLift],moto_ctrl[UpLift].target,MotoData[LeftUpLift].total_angle); 
 		/* 抬升电机PID控制    内环   外环输出量             --        电机反馈速度  */
-		pid_ast(&pid_in[LeftUpLift],pid_out[UpLift].ctrOut,MotoParam[LeftUpLift].speed_rpm); 
-		pid_ast(&pid_in[RightUpLift],-pid_out[UpLift].ctrOut,MotoParam[RightUpLift].speed_rpm);
+		pid_ast(&pid_in[LeftUpLift],pid_out[UpLift].ctrOut,MotoData[LeftUpLift].speed_rpm); 
+		pid_ast(&pid_in[RightUpLift],-pid_out[UpLift].ctrOut,MotoData[RightUpLift].speed_rpm);
 		/* 翻转电机PID控制    外环   理论目标位置           --        电机反馈位置  */
-		pid_ast(&pid_out[Flip],moto_ctrl[Flip].target,MotoParam[LeftFlip].total_angle);
+		pid_ast(&pid_out[Flip],moto_ctrl[Flip].target,MotoData[LeftFlip].total_angle);
 		/* 翻转电机PID控制    内环   外环输出量             --        电机反馈速度  */		
-		pid_ast(&pid_in[LeftFlip],pid_out[Flip].ctrOut,MotoParam[LeftFlip].speed_rpm); 
-		pid_ast(&pid_in[RightFlip],-pid_out[Flip].ctrOut,MotoParam[RightFlip].speed_rpm);
+		pid_ast(&pid_in[LeftFlip],pid_out[Flip].ctrOut,MotoData[LeftFlip].speed_rpm); 
+		pid_ast(&pid_in[RightFlip],-pid_out[Flip].ctrOut,MotoData[RightFlip].speed_rpm);
 		/* 滑移电机PID控制    外环   理论目标位置           --        电机反馈位置  */
-		pid_ast(&pid_out[Slip],moto_ctrl[Slip].target,MotoParam[MidSlip].total_angle); 
+		pid_ast(&pid_out[Slip],moto_ctrl[Slip].target,MotoData[MidSlip].total_angle); 
 		/* 滑移电机PID控制    内环   外环输出量             --        电机反馈位置  */	
-		pid_ast(&pid_in[MidSlip],pid_out[Slip].ctrOut,MotoParam[MidSlip].speed_rpm); 
-		/* 计算得 电机 闭环 电流值 发送   抬升电机 201 202 翻转电机 203 204 */		
-		send_ctrl_cur(0x200,(int16_t)pid_in[LeftUpLift].ctrOut,\
-		                    (int16_t)pid_in[RightUpLift].ctrOut,\
-		                    (int16_t)pid_in[LeftFlip].ctrOut,\
-												(int16_t)pid_in[RightFlip].ctrOut);
-		/* 计算得 电机 闭环 电流值 发送   滑移电机 205*/		
-		send_ctrl_cur(0x1ff,(int16_t)pid_in[MidSlip].ctrOut,	0,0,0);	
+		pid_ast(&pid_in[MidSlip],pid_out[Slip].ctrOut,MotoData[MidSlip].speed_rpm); 
+		/* 计算得 电机 闭环 电流值 发送    翻转电机 201 202    滑移电机 203 */		
+//		send_can1_cur(0x200,(int16_t)pid_in[LeftFlip].ctrOut,\
+//												(int16_t)pid_in[RightFlip].ctrOut,\
+//												(int16_t)pid_in[MidSlip].ctrOut,\
+//												 0 );
+//		/* 计算得 电机 闭环 电流值 发送  抬升电机 207 208*/		
+//		send_can2_cur(0x1ff, 0, 0, (int16_t)pid_in[RightUpLift].ctrOut, (int16_t)pid_in[LeftUpLift].ctrOut);	
 	
 		taskEXIT_CRITICAL();
     osDelayUntil(&PidHandleLastWakeTime,PID_TASK_PERIOD);			

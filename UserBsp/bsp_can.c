@@ -24,9 +24,9 @@ CAN_TxHeaderTypeDef  CAN_TxHeader;
 wl2data       data2bytes;
 wl4data       data4bytes; 
 gyro_param    gyro_yaw;
-moto_param    MotoParam[5];
+moto_param    MotoData[5];
 
-
+uint8_t TemporaryFlag = 0;
 /**
   * @brief   can filter initialization
   * @param   CAN_HandleTypeDef
@@ -43,17 +43,17 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef* hcan)
 		HAL_CAN_GetRxMessage(&hcan1, CAN_RX_FIFO0,&Can1Header,RxData1);
     switch (Can1Header.StdId)
 		{
-			//左 抬升 3508
-	    case CAN_UPLIFT_M1_ID:
-	    case CAN_UPLIFT_M2_ID:
+
 	    case CAN_FLIP_M1_ID:
 	    case CAN_FLIP_M2_ID: 
 	    case CAN_3508_SLIP_ID: 				
 	    {
 		 		static uint8_t i;
-				i = Can1Header.StdId - CAN_UPLIFT_M1_ID;
-				encoder_data_handle(&MotoParam[i],RxData1);
+				i = Can1Header.StdId - CAN_FLIP_M1_ID;
+				encoder_data_handle(&MotoData[i],RxData1);
 				err_detector_hook(CAN_SLIP_OFFLINE);
+				g_fps[LeftUpLift].cnt ++;
+				TemporaryFlag = 1;
 	    }break; 
 			
 	    default:
@@ -66,7 +66,14 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef* hcan)
 		HAL_CAN_GetRxMessage(&hcan2, CAN_RX_FIFO0,&Can2Header,RxData2);
     switch (Can2Header.StdId)
 		{
-		  
+	    case CAN_UPLIFT_M1_ID:
+	    case CAN_UPLIFT_M2_ID:
+			{
+		 		static uint8_t i;
+				i = Can2Header.StdId - CAN_UPLIFT_M1_ID;
+				encoder_data_handle(&MotoData[i],RxData2);
+				err_detector_hook(CAN_UPLIFT_LEFT_OFFLINE);			
+			}break;				
 
 			default:
       { 
@@ -141,7 +148,7 @@ void super_data_handle(wl4data* ptr1,uint8_t RxData[8])
   * @brief  send calculated current to motor
   * @param  3508 motor ESC id
   */
-void send_ctrl_cur(uint32_t id,int16_t iq1, int16_t iq2, int16_t iq3, int16_t iq4)
+void send_can1_cur(uint32_t id,int16_t iq1, int16_t iq2, int16_t iq3, int16_t iq4)
 {
 	  CAN_TxHeader.StdId    = id;
 	  CAN_TxHeader.IDE      = CAN_ID_STD;
@@ -158,6 +165,22 @@ void send_ctrl_cur(uint32_t id,int16_t iq1, int16_t iq2, int16_t iq3, int16_t iq
     HAL_CAN_AddTxMessage(&hcan1,&CAN_TxHeader,TxData,(uint32_t *)CAN_TX_MAILBOX0);
 }
 
+void send_can2_cur(uint32_t id,int16_t iq1, int16_t iq2, int16_t iq3, int16_t iq4)
+{
+	  CAN_TxHeader.StdId    = id;
+	  CAN_TxHeader.IDE      = CAN_ID_STD;
+	  CAN_TxHeader.RTR      = CAN_RTR_DATA;
+	  CAN_TxHeader.DLC      = 0x08;
+//	  TxData[0] = iq1 >> 8;
+//	  TxData[1] = iq1;
+//	  TxData[2] = iq2 >> 8;
+//	  TxData[3] = iq2;
+	  TxData[4] = iq3 >> 8;
+	  TxData[5] = iq3;
+	  TxData[6] = iq4 >> 8;
+	  TxData[7] = iq4;
+    HAL_CAN_AddTxMessage(&hcan2,&CAN_TxHeader,TxData,(uint32_t *)CAN_TX_MAILBOX0);
+}
 void send_chassis_ms(uint32_t id,uint8_t data[8])
 {
 	  CAN_TxHeader.StdId    = id;
@@ -178,31 +201,50 @@ void send_chassis_ms(uint32_t id,uint8_t data[8])
 void can_device_init(void)
 {
   //can1 &can2 use same filter config
+	/* can2 */	
+
+//  uint16_t StdId_GimbalCenter1 =CAN_UPLIFT_M1_ID;//frictiont motor  dji 2006
+//  uint16_t StdId_GimbalCenter2 =CAN_UPLIFT_M2_ID;//frictiont motor  dji 2006
+//  uint16_t StdId_FricL =CAN_MASTER_M1_ID;//frictiont motor  dji 2006
+//  uint16_t StdId_FricR =CAN_MASTER_M2_ID;//frictiont motor  dji 2006
+	
   CAN_FilterTypeDef  can_filter;
 	
-  can_filter.FilterActivation     = ENABLE;
-  can_filter.FilterBank         = 0;
-  can_filter.FilterIdHigh         = 0x0000;
-  can_filter.FilterIdLow          = 0x0000;
-  can_filter.FilterMaskIdHigh     = 0x0000;
-  can_filter.FilterMaskIdLow      = 0x0000;
-  can_filter.FilterFIFOAssignment = CAN_FilterFIFO0;
-  can_filter.FilterMode           = CAN_FILTERMODE_IDMASK;
-  can_filter.FilterScale          = CAN_FILTERSCALE_32BIT;
-  can_filter.SlaveStartFilterBank      = 14;
-  HAL_CAN_ConfigFilter(&hcan1, &can_filter);
+	can_filter.FilterActivation     = ENABLE;
+	can_filter.FilterBank         = 0U;
+	can_filter.FilterIdHigh         = 0x0000;
+	can_filter.FilterIdLow          = 0x0000;
+	can_filter.FilterMaskIdHigh     = 0x0000;
+	can_filter.FilterMaskIdLow      = 0x0000;
+	can_filter.FilterFIFOAssignment = CAN_FilterFIFO0;
+	can_filter.FilterMode           = CAN_FILTERMODE_IDMASK;
+	can_filter.FilterScale          = CAN_FILTERSCALE_32BIT;
+	can_filter.SlaveStartFilterBank      = 14;
+	HAL_CAN_ConfigFilter(&hcan1, &can_filter);
   //while (HAL_CAN_ConfigFilter(&hcan1, &can_filter) != HAL_OK);
-  can_filter.FilterBank         = 14;
+	
+  can_filter.FilterActivation     = ENABLE;	
+  can_filter.FilterBank         = 14U;
+	can_filter.FilterMode=CAN_FILTERMODE_IDLIST;//列表模式
+	can_filter.FilterScale=CAN_FILTERSCALE_16BIT;//16位宽
+	can_filter.FilterFIFOAssignment=CAN_FILTER_FIFO0;
+	can_filter.FilterIdHigh = ((uint16_t)CAN_UPLIFT_M1_ID)<<5 ;
+	can_filter.FilterIdLow = ((uint16_t)CAN_UPLIFT_M2_ID)<<5;
+	can_filter.FilterMaskIdHigh = ((uint16_t)CAN_MASTER_M1_ID)<<5;
+	can_filter.FilterMaskIdLow = ((uint16_t)CAN_MASTER_M2_ID)<<5;
   HAL_CAN_ConfigFilter(&hcan2, &can_filter);	
   //while (HAL_CAN_ConfigFilter(&hcan2, &can_filter) != HAL_OK);
 }
 
 void can_receive_start(void)
 {
+	can_device_init();
 	HAL_CAN_Start(&hcan1);
 	HAL_CAN_ActivateNotification(&hcan1, CAN_IT_RX_FIFO0_MSG_PENDING);
+	
 	HAL_CAN_Start(&hcan2);
 	HAL_CAN_ActivateNotification(&hcan2, CAN_IT_RX_FIFO0_MSG_PENDING);
+
 }
 
 

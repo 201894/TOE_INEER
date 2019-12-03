@@ -43,3 +43,7 @@ toe_ineer\stm32f4xx_it.o: ../Middlewares/Third_Party/FreeRTOS/Source/portable/RV
 toe_ineer\stm32f4xx_it.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/mpu_wrappers.h
 toe_ineer\stm32f4xx_it.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/task.h
 toe_ineer\stm32f4xx_it.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/list.h
+toe_ineer\stm32f4xx_it.o: ..\UserBsp\bsp_uart.h
+toe_ineer\stm32f4xx_it.o: ../Inc/usart.h
+toe_ineer\stm32f4xx_it.o: E:\Keil\ARM\ARMCC\Bin\..\include\stdio.h
+toe_ineer\stm32f4xx_it.o: ..\RmLib\STMGood.h

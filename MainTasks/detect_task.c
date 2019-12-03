@@ -13,11 +13,14 @@
 #include "bsp_io.h"
 #include "freertos.h"
 #include "tim.h"
+#include "string.h"
+
+#define DETECT_TASK_PERIOD 100
 UBaseType_t detect_stack_surplus;
 
 /* detect task global parameter */
 global_err_t g_err;
-
+global_fps_t g_fps[MaxId];
 /* detect task static parameter */
 static offline_dev_t offline_dev[STIR_M3_OFFLINE + 1];
 /**
@@ -131,7 +134,10 @@ void detect_task(void const *argu)
       LED_G_ON;
     }    
 
-
+    module_fps_detect();
+     if(g_fps[LeftUpLift].fps > 400)
+     HAL_GPIO_TogglePin(RED_GPIO_Port,RED_Pin);		
+    module_fps_clear();
    // detect_stack_surplus = uxTaskGetStackHighWaterMark(NULL);    
     osDelayUntil(&detect_wake_time, DETECT_TASK_PERIOD);
   }
@@ -254,3 +260,28 @@ static void module_offline_callback(void)
     }break;
   }
 }
+
+static void module_fps_detect(void)
+{
+	for (int i = 0; i < MaxId; i++)
+	{
+		g_fps[i].fps = g_fps[i].cnt * 1000/DETECT_TASK_PERIOD;
+	}  
+}
+static void module_fps_clear(void)
+{
+	  for (int i = 0; i < MaxId; i++)
+		{
+			memset(&g_fps[i], 0, sizeof(global_fps_t));		
+		}
+}
+
+
+
+
+
+
+
+
+
+

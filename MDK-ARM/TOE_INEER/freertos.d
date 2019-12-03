@@ -47,3 +47,10 @@ toe_ineer\freertos.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/timers.
 toe_ineer\freertos.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/queue.h
 toe_ineer\freertos.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/semphr.h
 toe_ineer\freertos.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/event_groups.h
+toe_ineer\freertos.o: ..\UserBsp\bsp_uart.h
+toe_ineer\freertos.o: ../Inc/usart.h
+toe_ineer\freertos.o: E:\Keil\ARM\ARMCC\Bin\..\include\stdio.h
+toe_ineer\freertos.o: ..\RmLib\STMGood.h
+toe_ineer\freertos.o: ..\UserBsp\bsp_can.h
+toe_ineer\freertos.o: ..\RmLib\pid.h
+toe_ineer\freertos.o: ..\MainTasks\detect_task.h
