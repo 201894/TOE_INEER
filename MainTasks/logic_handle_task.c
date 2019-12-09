@@ -16,7 +16,7 @@
 
 #define LOGIC_TASK_PERIOD 50
 moto_ctrl_t moto_ctrl[3]; 
-extern uint8_t TemporaryFlag; 
+
 void logic_handle_task(void const * argument)
 {
   /* USER CODE BEGIN logic_handle_task */

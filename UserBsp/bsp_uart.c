@@ -21,7 +21,10 @@ uint8_t uart7_buff[50],uart6_buff[50],uart3_buff[50];
 /**
   * @brief   initialize uart device 
   */
-	
+void USART_InitArgument(void)
+{
+		USER_DMA_INIT(&BT_usart,&hdma_usart6_rx,uart6_buff,BT_BUFLEN);		
+}	
 
 void USER_DMA_INIT(UART_HandleTypeDef *huart, DMA_HandleTypeDef *hdma, uint8_t *Buffer_Adress, uint8_t Buffer_Len)
 {
@@ -64,7 +67,7 @@ void UART_RX_IDLE_IRQ(UART_HandleTypeDef *huart){
 			if(__HAL_UART_GET_FLAG(&BT_usart,UART_FLAG_IDLE) != RESET){
 			__HAL_UART_CLEAR_IDLEFLAG(&BT_usart);		
 			HAL_UART_DMAStop(&BT_usart);
-			HAL_UART_Receive_DMA(&BT_usart,uart6_buff,1);
+			HAL_UART_Receive_DMA(&BT_usart,uart6_buff,BT_BUFLEN);
 		}
 	}
 }

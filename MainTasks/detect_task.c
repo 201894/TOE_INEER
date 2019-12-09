@@ -22,7 +22,7 @@ UBaseType_t detect_stack_surplus;
 global_err_t g_err;
 global_fps_t g_fps[MaxId];
 /* detect task static parameter */
-static offline_dev_t offline_dev[STIR_M3_OFFLINE + 1];
+static offline_dev_t offline_dev[MODE_CTRL_OFFLINE + 1];
 /**
   * @brief     initialize detector error_list
   * @usage     used before detect loop in detect_task() function
@@ -36,7 +36,7 @@ void detector_init(void)
 	 /* initialize device error type and offline timeout value */
 	 for (uint8_t i = CAN_UPLIFT_LEFT_OFFLINE; i < ERROR_LIST_LENGTH; i++)
 	 {		  
-	  if (i <= STIR_M3_OFFLINE)
+	  if (i <= MODE_CTRL_OFFLINE)
 		{
 		  offline_dev[i].set_timeout = 200; //ms
 		  offline_dev[i].last_time   = 0;
@@ -114,8 +114,7 @@ void detect_task(void const *argu)
   LED_R_OFF;
   LED_G_OFF;
   uint32_t detect_wake_time = osKernelSysTick();
-	
-	
+		
   while(1)
   {
     detect_time_ms = HAL_GetTick() - detect_time_last;
@@ -132,11 +131,9 @@ void detect_task(void const *argu)
     {
       g_err.beep_ctrl = 0;
       LED_G_ON;
-    }    
+    }
 
     module_fps_detect();
-     if(g_fps[LeftUpLift].fps > 400)
-     HAL_GPIO_TogglePin(RED_GPIO_Port,RED_Pin);		
     module_fps_clear();
    // detect_stack_surplus = uxTaskGetStackHighWaterMark(NULL);    
     osDelayUntil(&detect_wake_time, DETECT_TASK_PERIOD);
@@ -147,7 +144,7 @@ static void module_offline_detect(void)
 {
   int max_priority = 0;
   int err_cnt      = 0;
-  for (uint8_t id = CAN_UPLIFT_LEFT_OFFLINE; id <= STIR_M3_OFFLINE; id++)
+  for (uint8_t id = CAN_UPLIFT_LEFT_OFFLINE; id <= MODE_CTRL_OFFLINE; id++)
   {
     g_err.list[id].dev->delta_time = HAL_GetTick() - g_err.list[id].dev->last_time;
     if (g_err.list[id].enable 

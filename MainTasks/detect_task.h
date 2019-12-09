@@ -25,11 +25,10 @@ typedef enum
   CAN_FLIP_RIGHT_OFFLINE   	= 4,
   CAN_SLIP_OFFLINE         	= 5,
   MODE_CTRL_OFFLINE        	= 7,
-  STIR_M3_OFFLINE          	= 8,  
-  BULLET_JAM               	= 9,
-  CHASSIS_CONFIG_ERR   		 	= 10,
-  GIMBAL_CONFIG_ERR   	 		= 11,
-  ERROR_LIST_LENGTH    			= 12,
+  BULLET_JAM               	= 8,
+  CHASSIS_CONFIG_ERR   		 	= 9,
+  GIMBAL_CONFIG_ERR   	 		= 10,
+  ERROR_LIST_LENGTH    			= 11,
 } err_id_e;
 
 typedef enum

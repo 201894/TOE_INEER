@@ -15,8 +15,8 @@
 typedef enum
 {
   LeftUpLift        = 0,  //
-  RightUpLift       = 1,	
-	LeftFlip          = 2,  
+  RightUpLift     = 1,	
+	LeftFlip           = 2,  
 	RightFlip         = 3,
 	MidSlip           = 4,
 	MaxId             = 10,
@@ -24,10 +24,9 @@ typedef enum
 
 typedef enum
 {
-  UpLift        = 0,  //
+  UpLift      = 0,  //
   Flip          = 1,	
 	Slip          = 2,  
-
 }module_part_id;
 
 typedef enum
@@ -264,6 +263,7 @@ extern ext_robot_hurt_t                 ext_robot_hurt;
 
 void can_device_init(void);
 void can_receive_start(void);
+void CAN_InitArgument(void);
 void send_gimbal_ms(uint32_t id,uint8_t data[8]);
 void send_chassis_ms(uint32_t id,uint8_t data[8]);
 void encoder_data_handle(moto_param* ptr,uint8_t RxData[8]);

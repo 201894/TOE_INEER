@@ -19,7 +19,7 @@
 #define BT_usart       huart6 //for debug 
 #define BT_USART       USART6//for debug
 #define BT_DMA_HANDLE       hdma_usart6_rx//for debug
-#define BT_BUFFER_LEN       1//for debug
+#define BT_BUFLEN              1
 
 void uart1_device_init(void);
 void uart7_device_init(void);

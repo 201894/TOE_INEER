@@ -106,9 +106,11 @@ int main(void)
   MX_UART7_Init();
   /* USER CODE BEGIN 2 */
 	
-  USER_DMA_INIT(&BT_usart,&BT_DMA_HANDLE,uart6_buff,BT_BUFFER_LEN);
+  USART_InitArgument();
+   	HAL_Delay(500);		
+	CAN_InitArgument();
+   	HAL_Delay(500);		
 	
-	can_receive_start();
   /* USER CODE END 2 */
 
   /* Call init function for freertos objects (in freertos.c) */
