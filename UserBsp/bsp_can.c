@@ -6,7 +6,7 @@
  *  @brief receive external can device message
  *
  */
-
+#include "logic_handle_task.h"
 #include "bsp_can.h"
 #include "cmsis_os.h"
 #include "can.h"
@@ -16,15 +16,13 @@
 #include <stdio.h>
 #define ENCODER_ANGLE_RATIO               (8192.0f/360.0f)
 #define REDUCTION_RATIO                   (36/1)
-#define pi                                 3.1415926
+#define pi                                 			3.1415926.f
 
-uint8_t TxData[8];
-CAN_TxHeaderTypeDef  CAN_TxHeader;
-
-wl2data       data2bytes;
-wl4data       data4bytes; 
-gyro_param    gyro_yaw;
-moto_param    MotoData[5];
+uint8_t 														TxData[8];
+wl2data       											data2bytes;
+wl4data       											data4bytes; 
+moto_param    								MotoData[5];
+CAN_TxHeaderTypeDef  	CAN_TxHeader;
 
 /**
   * @brief   can filter initialization
@@ -42,17 +40,24 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef* hcan)
 		HAL_CAN_GetRxMessage(&hcan1, CAN_RX_FIFO0,&Can1Header,RxData1);
     switch (Can1Header.StdId)
 		{
-
 	    case CAN_FLIP_M1_ID:
+	    {
+				encoder_data_handle(&MotoData[LeftFlip],RxData1);
+				err_detector_hook(CAN_FLIP_LEFT_OFFLINE);
+				g_fps[LeftFlip].cnt ++;			
+	    }break; 				
+			
 	    case CAN_FLIP_M2_ID: 
+	    {
+				encoder_data_handle(&MotoData[RightFlip],RxData1);
+				err_detector_hook(CAN_FLIP_RIGHT_OFFLINE);
+				g_fps[RightFlip].cnt ++;			
+	    }break; 				
 	    case CAN_3508_SLIP_ID: 				
 	    {
-		 		static uint8_t i;
-				i = Can1Header.StdId - CAN_FLIP_M1_ID;
-				encoder_data_handle(&MotoData[i],RxData1);
+				encoder_data_handle(&MotoData[MidSlip],RxData1);
 				err_detector_hook(CAN_SLIP_OFFLINE);
-				g_fps[LeftUpLift].cnt ++;
-				
+				g_fps[MidSlip].cnt ++;			
 	    }break; 
 			
 	    default:
@@ -66,14 +71,34 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef* hcan)
     switch (Can2Header.StdId)
 		{
 	    case CAN_UPLIFT_M1_ID:
+			{
+				encoder_data_handle(&MotoData[LeftUpLift],RxData2);
+				err_detector_hook(CAN_UPLIFT_LEFT_OFFLINE);			
+				g_fps[LeftUpLift].cnt ++;						
+			}break;								
+			
 	    case CAN_UPLIFT_M2_ID:
 			{
-		 		static uint8_t i;
-				i = Can2Header.StdId - CAN_UPLIFT_M1_ID;
-				encoder_data_handle(&MotoData[i],RxData2);
-				err_detector_hook(CAN_UPLIFT_LEFT_OFFLINE);			
-			}break;				
-
+				encoder_data_handle(&MotoData[RightUpLift],RxData2);
+				err_detector_hook(CAN_UPLIFT_RIGHT_OFFLINE);		
+				g_fps[RightUpLift].cnt ++;					
+			}break;			
+			
+      case CAN_MASTER_M1_ID:
+			{
+				data2bytes.c[0] = RxData2[0];
+				data2bytes.c[1] = RxData2[1];		
+				
+				logic_data.raw_mode = data2bytes.d; 
+				
+				err_detector_hook(MODE_CTRL_OFFLINE);		
+				g_fps[MasterID].cnt ++;						
+			}break;
+			
+      case CAN_MASTER_M2_ID:
+			{
+			  
+			}break;			
 			default:
       { 
       }break;
@@ -89,58 +114,30 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef* hcan)
 void encoder_data_handle(moto_param* ptr,uint8_t RxData[8])
 {
    ptr->last_ecd = ptr->ecd;
-   ptr->ecd      = (uint16_t)(RxData[0] << 8 | RxData[1]);  
-   if (ptr->ecd - ptr->last_ecd > 4096)
-   {
-     ptr->round_cnt--;
-     ptr->ecd_raw_rate = ptr->ecd - ptr->last_ecd - 8192;
-   }
-   else if (ptr->ecd - ptr->last_ecd < -4096)
-   {
-     ptr->round_cnt++;
-     ptr->ecd_raw_rate = ptr->ecd - ptr->last_ecd + 8192;
-   }
-   else
-   {
-     ptr->ecd_raw_rate = ptr->ecd - ptr->last_ecd;
-   }
-   ptr->total_ecd = ptr->round_cnt * 8192 + ptr->ecd - ptr->offset_ecd;
-   /* total angle, unit is degree */
-   ptr->total_angle = ptr->total_ecd / ENCODER_ANGLE_RATIO;
-   ptr->stir_angle =   (float)ptr->total_angle/REDUCTION_RATIO;
-  
-   ptr->speed_rpm     = (int16_t)(RxData[2] << 8 | RxData[3]);
-   ptr->current = (int16_t)(RxData[2] << 8 | RxData[3]);
-}
-
-/**
-  * @brief     get gyro data and unpack the data 
-* @param     ptr: Pointer to a wl2data structure  ptrr: Pointer to a wl4data structure
-  * @attention this function should be called after gyro is read
-  */
-void gyro_data_handle(wl2data* ptr,wl4data* ptrr,gyro_param* gyro,uint8_t RxData[8])
-{
-	  ptr->c[0] = RxData[0];
-		ptr->c[1] = RxData[1];
-	  gyro->pit_speed = -(float)ptr->d / 16.384f;
-	   
-		ptr->c[0] = RxData[2];
-		ptr->c[1] = RxData[3];    
-		gyro->yaw_speed  = -(float)ptr->d / 16.384f;
-
-		ptrr->c[0] = RxData[4];
-		ptrr->c[1] = RxData[5];
-		ptrr->c[2] = RxData[6];
-		ptrr->c[3] = RxData[7];
-		gyro->angle_z = ptrr->f ;	
-}
-
-void super_data_handle(wl4data* ptr1,uint8_t RxData[8])
-{
-		ptr1->c[0] = RxData[0];
-		ptr1->c[1] = RxData[1];
-		ptr1->c[2] = RxData[2];
-		ptr1->c[3] = RxData[3];
+	 if(ptr->init_flag == 0)
+	 {
+		 ptr->init_flag = 1;
+		 ptr->round_cnt = 0;		 
+	   ptr->offset_ecd = (uint16_t)(RxData[0] << 8 | RxData[1]);  
+	   ptr->offset_angle = ptr->offset_ecd/ENCODER_ANGLE_RATIO;  		 
+	 }
+	 else
+	 {
+		 ptr->ecd      = (uint16_t)(RxData[0] << 8 | RxData[1]);  
+		 if (ptr->ecd - ptr->last_ecd > 4096)
+		 {
+			 ptr->round_cnt--;
+		 }
+		 else if (ptr->ecd - ptr->last_ecd < -4096)
+		 {
+			 ptr->round_cnt++;
+		 }
+		 ptr->total_ecd = ptr->round_cnt * 8192 + ptr->ecd - ptr->offset_ecd;
+		 /* total angle, unit is degree */
+		 ptr->total_angle = ptr->total_ecd / ENCODER_ANGLE_RATIO; 
+		 ptr->speed_rpm     = (int16_t)(RxData[2] << 8 | RxData[3]);
+		 ptr->current = (int16_t)(RxData[2] << 8 | RxData[3]);
+	 }
 }
 
 /**

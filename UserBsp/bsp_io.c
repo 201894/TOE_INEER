@@ -10,6 +10,17 @@
 #include "bsp_io.h"
 #include "cmsis_os.h"
 
+
+
+void evalve_init(void)
+{
+	HAL_GPIO_WritePin(GPIOH, GPIO_PIN_2, GPIO_PIN_RESET);
+	HAL_GPIO_WritePin(GPIOH, GPIO_PIN_3, GPIO_PIN_RESET);
+	HAL_GPIO_WritePin(GPIOH, GPIO_PIN_4, GPIO_PIN_RESET);
+	HAL_GPIO_WritePin(GPIOH, GPIO_PIN_5, GPIO_PIN_RESET);  
+}
+
+
 void flow_led_on(uint16_t num)
 {	
     HAL_GPIO_WritePin(GPIOG, GPIO_PIN_8 >> num,0);

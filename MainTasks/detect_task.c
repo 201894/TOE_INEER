@@ -98,7 +98,6 @@ void detector_param_init(void)
 {
   detector_init();
   g_err.beep_ctrl = 0;  
-  led_init;
 }
 
 /**
@@ -265,6 +264,7 @@ static void module_fps_detect(void)
 		g_fps[i].fps = g_fps[i].cnt * 1000/DETECT_TASK_PERIOD;
 	}  
 }
+
 static void module_fps_clear(void)
 {
 	  for (int i = 0; i < MaxId; i++)

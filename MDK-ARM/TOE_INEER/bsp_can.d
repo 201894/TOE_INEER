@@ -1,5 +1,5 @@
 toe_ineer\bsp_can.o: ..\UserBsp\bsp_can.c
-toe_ineer\bsp_can.o: ..\UserBsp\bsp_can.h
+toe_ineer\bsp_can.o: ..\MainTasks\logic_handle_task.h
 toe_ineer\bsp_can.o: ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal.h
 toe_ineer\bsp_can.o: ../Inc/stm32f4xx_hal_conf.h
 toe_ineer\bsp_can.o: ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_rcc.h
@@ -33,6 +33,7 @@ toe_ineer\bsp_can.o: ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_spi.h
 toe_ineer\bsp_can.o: ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_tim.h
 toe_ineer\bsp_can.o: ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_tim_ex.h
 toe_ineer\bsp_can.o: ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_uart.h
+toe_ineer\bsp_can.o: ..\UserBsp\bsp_can.h
 toe_ineer\bsp_can.o: ../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS/cmsis_os.h
 toe_ineer\bsp_can.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/FreeRTOS.h
 toe_ineer\bsp_can.o: ../Inc/FreeRTOSConfig.h

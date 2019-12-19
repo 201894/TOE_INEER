@@ -14,7 +14,7 @@
 #include "pid.h"
 #include "STMGood.h"
 
-#define     PID_TASK_PERIOD 50
+#define     PID_TASK_PERIOD 		5
 //#define     LeftUpLift       0
 //#define     RightUpLift      1
 //#define     LeftFlip         2
@@ -32,7 +32,28 @@ void pid_handle_task(void const * argument)
   {
 		PidHandleLastWakeTime = xTaskGetTickCount();		
 		taskENTER_CRITICAL();
-
+	#if 1
+	    pid_adjust(&pid_out[UpLift],_kp,_ki,_kd);
+	    pid_adjust(&pid_in[LeftUpLift],_kkp,_kki,_kkd);
+	    pid_adjust(&pid_in[RightUpLift],_kkp,_kki,_kkd);	  
+	    pid_out[UpLift].MaxOut = maxout1;
+	    pid_in[LeftUpLift].MaxOut = maxout2;			
+			pid_in[RightUpLift].MaxOut = maxout2;		
+	#endif
+	#if 0
+	    pid_adjust(&pid_out[Flip],_kp,_ki,_kd);
+	    pid_adjust(&pid_in[LeftFlip],_kkp,_kki,_kkd);
+	    pid_adjust(&pid_in[RightFlip],_kkp,_kki,_kkd);	  
+	    pid_out[Flip].MaxOut = maxout1;
+	    pid_in[LeftFlip].MaxOut = maxout2;			
+			pid_in[RightFlip].MaxOut = maxout2;		
+	#endif	
+	#if 0
+	    pid_adjust(&pid_out[Slip],_kp,_ki,_kd);
+	    pid_adjust(&pid_in[MidSlip],_kkp,_kki,_kkd);
+	    pid_out[Slip].MaxOut = maxout1;
+	    pid_in[MidSlip].MaxOut = maxout2;			
+	#endif			
 		/* 抬升电机 及 翻转电机 控制策略 ：		
 		    使用一个电机的外环输出值，作为内环控制的目标值
 		*/
@@ -66,7 +87,7 @@ void pid_handle_task(void const * argument)
 }
  
  
-void pid_param_init(void)
+void PID_InitArgument(void)
 {
 	                                   /* errILim  maxOut  kp ki kd  */
   PID_struct_init(&pid_out[UpLift],       	0,      0,  0, 0, 0);

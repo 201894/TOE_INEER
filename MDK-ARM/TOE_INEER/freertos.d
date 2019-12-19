@@ -54,3 +54,4 @@ toe_ineer\freertos.o: ..\RmLib\STMGood.h
 toe_ineer\freertos.o: ..\UserBsp\bsp_can.h
 toe_ineer\freertos.o: ..\RmLib\pid.h
 toe_ineer\freertos.o: ..\MainTasks\detect_task.h
+toe_ineer\freertos.o: ..\MainTasks\logic_handle_task.h

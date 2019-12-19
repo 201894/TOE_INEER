@@ -31,7 +31,7 @@
 #include "bsp_can.h"
 #include "pid.h"
 #include "detect_task.h"
-
+#include "logic_handle_task.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -171,23 +171,54 @@ void debug_task(void const * argument)
 			MaxId             = 10,
 		}module_id;
 		*/		
-		/* FPS */
     #if 1
-			printf("FPS[LeftUpLift] 	= %d \r\n",g_fps[0].fps);
+			printf("##FPS REVENLENT : ##\r\n");				
+			printf("FPS[LeftUpLift] 		= %d \r\n",g_fps[0].fps);
 			printf("FPS[RightUpLift] 	= %d \r\n",g_fps[1].fps);		
-			printf("FPS[LeftFlip] 		= %d \r\n",g_fps[2].fps);
-			printf("FPS[RightFlip] 		= %d \r\n",g_fps[3].fps);
-			printf("FPS[MidSlip] 			= %d \r\n",g_fps[4].fps);
+			printf("FPS[LeftFlip] 				= %d \r\n",g_fps[2].fps);
+			printf("FPS[RightFlip] 			= %d \r\n",g_fps[3].fps);
+			printf("FPS[MidSlip] 				= %d \r\n",g_fps[4].fps);
+			printf("FPS[MasterID] 				= %d \r\n",g_fps[MasterID].fps);		
 		#endif
-		/* CAN  INFORMATION */		
     #if 1
-			printf("MotoData[LeftUpLift] 	= %d \r\n",MotoData[LeftUpLift].ecd);
-			printf("MotoData[RightUpLift] = %d \r\n",MotoData[RightUpLift].ecd);		
-			printf("MotoData[LeftFlip] 		= %d \r\n",MotoData[LeftFlip].ecd);		
-			printf("MotoData[RightFlip] 	= %d \r\n",MotoData[RightFlip].ecd);		
-			printf("MotoData[MidSlip] 		= %d \r\n",MotoData[MidSlip].ecd);					
+			printf("MOTO ECD REVENLENT : ##\r\n");				
+			printf("MotoData[LeftUpLift] 		= %d \r\n",MotoData[LeftUpLift].ecd);
+			printf("MotoData[RightUpLift] 	= %d \r\n",MotoData[RightUpLift].ecd);		
+			printf("MotoData[LeftFlip] 				= %d \r\n",MotoData[LeftFlip].ecd);		
+			printf("MotoData[RightFlip] 		= %d \r\n",MotoData[RightFlip].ecd);		
+			printf("MotoData[MidSlip] 				= %d \r\n",MotoData[MidSlip].ecd);					
 		#endif		
 		
+    #if 0 
+			printf("UPLIFT PID REVENLENT : ##\r\n");				
+			printf("TargetAngle  	= %.2f\r\n",moto_ctrl[UpLift].target);	
+			printf("CurrentAngle 	= %.2f\r\n",MotoData[LeftUpLift].total_angle);	
+			printf("AngleError  		= #%.2f\r\n",pid_out[UpLift].errNow);	
+			printf("FirstCtrOut  		= %.2f\r\n",pid_out[UpLift].ctrOut);				
+			printf("CurrentSpd 		= %df\r\n",MotoData[LeftUpLift].speed_rpm);	 // MotoData[RightUpLift].speed_rpm
+			printf("SpdError  		    = %.2f\r\n",pid_in[LeftUpLift].ctrOut);			
+			printf("FinalCtrOut  		= %d\r\n",(int16_t)pid_in[LeftUpLift].ctrOut);					
+		#endif			
+    #if 0
+			printf("FLIP PID REVENLENT : ##\r\n");				
+			printf("TargetAngle  	= %.2f\r\n",moto_ctrl[Flip].target);	
+			printf("CurrentAngle 	= %.2f\r\n",MotoData[LeftFlip].total_angle);	
+			printf("AngleError  		= #%.2f\r\n",pid_out[Flip].errNow);	
+			printf("FirstCtrOut  		= %.2f\r\n",pid_out[Flip].ctrOut);				
+			printf("CurrentSpd 		= %df\r\n",MotoData[LeftFlip].speed_rpm);	 // MotoData[RightUpLift].speed_rpm
+			printf("SpdError  		    = %.2f\r\n",pid_in[LeftFlip].ctrOut);			
+			printf("FinalCtrOut  		= %d\r\n",(int16_t)pid_in[LeftFlip].ctrOut);					
+		#endif				
+    #if 0
+			printf("SLIP PID REVENLENT : ##\r\n");				
+			printf("TargetAngle  	= %.2f\r\n",moto_ctrl[Slip].target);	
+			printf("CurrentAngle 	= %.2f\r\n",MotoData[MidSlip].total_angle);	
+			printf("AngleError  		= #%.2f\r\n",pid_out[Slip].errNow);	
+			printf("FirstCtrOut  		= %.2f\r\n",pid_out[Slip].ctrOut);				
+			printf("CurrentSpd 		= %df\r\n",MotoData[MidSlip].speed_rpm);	 // MotoData[RightUpLift].speed_rpm
+			printf("SpdError  		    = %.2f\r\n",pid_in[MidSlip].ctrOut);			
+			printf("FinalCtrOut  		= %d\r\n",(int16_t)pid_in[MidSlip].ctrOut);					
+		#endif			
     osDelay(200);
   }
   /* USER CODE END debug_task */

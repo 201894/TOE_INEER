@@ -50,14 +50,14 @@ typedef struct
 
 typedef struct
 {
-  uint8_t 	mode;
-	uint8_t   flag;
-  float     target;
-  float     tempo;	
+  uint8_t 	raw_mode;		
+  uint8_t 	global_mode;
 	
-} logic_ctrl_t;
+} logic_data_t;
 
 extern moto_ctrl_t moto_ctrl[3];
+extern logic_data_t logic_data;
 void moto_param_init(void);
-void flag_clear_handle(void);
+
+void flagClear(void);
 #endif

@@ -19,11 +19,10 @@ char Data[100];
 char Str1[100];
 double xx[100];
 //-----------------------------------变量保护区（以上变量不能改变）
-extern int16_t  chassis_target[4];
+
 float _kp,_ki,_kd; 
 float _kkp,_kki,_kkd;
 float target,maxout1,maxout2;
- float buffer_gf;
 //-------------------------------------------------------------------------------
 int cmd(char *Cmd,int n)
 {
@@ -111,8 +110,8 @@ void multi1(int n)
 {
 	_kp= xx[1];
 	_ki = xx[2];
-    _kd = xx[3];
-//	printf("################\r\n");
+  _kd = xx[3];
+	printf("################\r\n");
 	printf("PO:%f IO:%f DO:%f\r\n",_kp,_ki,_kd);
 }
 void multi2(int n)
@@ -120,15 +119,15 @@ void multi2(int n)
 	_kkp = xx[1];
 	_kki  = xx[2];
 	_kkd = xx[3];
-//	printf("################\r\n");
-//	printf("PI:%f II:%f DI:%f\r\n",_kkp,_kki,_kkd);		
+	printf("################\r\n");
+	printf("PI:%f II:%f DI:%f\r\n",_kkp,_kki,_kkd);		
 }
 void multi3(int n)
 {
 
   maxout1 = xx[1];
   maxout2 = xx[2];
-  buffer_gf = xx[3];
+
 //  printf("################\r\n");
 //  printf("maxout1:%f maxout2:%f\r\n",maxout1,maxout2);
 }

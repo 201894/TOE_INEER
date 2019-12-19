@@ -14,9 +14,9 @@
 #include "pid.h"
 #include "STMGood.h"
 
-#define LOGIC_TASK_PERIOD 50
+#define LOGIC_TASK_PERIOD 5
 moto_ctrl_t moto_ctrl[3]; 
-
+logic_data_t logic_data;
 void logic_handle_task(void const * argument)
 {
   /* USER CODE BEGIN logic_handle_task */

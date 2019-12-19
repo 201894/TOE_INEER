@@ -11,6 +11,6 @@
 
 #include "stm32f4xx_hal.h"
 
-void pid_param_init(void);
+void PID_InitArgument(void);
 
 #endif
