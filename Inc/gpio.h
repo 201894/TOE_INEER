@@ -32,7 +32,16 @@
 /* USER CODE END Includes */
 
 /* USER CODE BEGIN Private defines */
-
+	 #define GNS_GPIO_PORT GPIOC
+	 #define POWER1_CTRL GPIO_PIN_4
+	 #define POWER2_CTRL GPIO_PIN_5
+	 #define POWER3_CTRL GPIO_PIN_6
+	 #define POWER4_CTRL GPIO_PIN_7
+	 #define S_IN4 GPIO_PIN_6
+	 #define S_IN3 GPIO_PIN_7
+	 #define S_IN2 GPIO_PIN_8
+	 #define S_IN1 GPIO_PIN_9
+	 
 /* USER CODE END Private defines */
 
 void MX_GPIO_Init(void);

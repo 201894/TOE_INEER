@@ -6,23 +6,27 @@
  *  @brief receive external can device message
  *
  */
-#include "logic_handle_task.h"
+
 #include "bsp_can.h"
 #include "cmsis_os.h"
+#include "minorThread.h"
+#include "logic_handle_task.h"
 #include "can.h"
-#include "detect_task.h"
 #include <math.h>
 #include <string.h>
 #include <stdio.h>
+
 #define ENCODER_ANGLE_RATIO               (8192.0f/360.0f)
-#define REDUCTION_RATIO                   (36/1)
+#define REDUCTION_RATIO                   (19/1)
 #define pi                                 			3.1415926.f
 
-uint8_t 														TxData[8];
-wl2data       											data2bytes;
-wl4data       											data4bytes; 
-moto_param    								MotoData[5];
-CAN_TxHeaderTypeDef  	CAN_TxHeader;
+CanTxMsgTypeDef  				can1_tx;
+CanRxMsgTypeDef  				can1_rx;
+CanTxMsgTypeDef  				can2_tx;
+CanRxMsgTypeDef  				can2_rx;
+wl4data            						data4bytes;    
+wl2data            						data2bytes;   
+moto_param    						MotoData[3];
 
 /**
   * @brief   can filter initialization
@@ -30,81 +34,45 @@ CAN_TxHeaderTypeDef  	CAN_TxHeader;
   * @retval  None
   */  
 
-void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef* hcan)
+void HAL_CAN_RxCpltCallback(CAN_HandleTypeDef* hcan)
 {
-
-  uint8_t RxData1[8],RxData2[8];
-  CAN_RxHeaderTypeDef Can1Header,Can2Header;
   if(hcan->Instance == CAN1)
-  {
-		HAL_CAN_GetRxMessage(&hcan1, CAN_RX_FIFO0,&Can1Header,RxData1);
-    switch (Can1Header.StdId)
-		{
-	    case CAN_FLIP_M1_ID:
-	    {
-				encoder_data_handle(&MotoData[LeftFlip],RxData1);
-				err_detector_hook(CAN_FLIP_LEFT_OFFLINE);
-				g_fps[LeftFlip].cnt ++;			
-	    }break; 				
-			
-	    case CAN_FLIP_M2_ID: 
-	    {
-				encoder_data_handle(&MotoData[RightFlip],RxData1);
-				err_detector_hook(CAN_FLIP_RIGHT_OFFLINE);
-				g_fps[RightFlip].cnt ++;			
-	    }break; 				
-	    case CAN_3508_SLIP_ID: 				
-	    {
-				encoder_data_handle(&MotoData[MidSlip],RxData1);
-				err_detector_hook(CAN_SLIP_OFFLINE);
-				g_fps[MidSlip].cnt ++;			
-	    }break; 
-			
-	    default:
-      {		 
-      }break;
-		}
-  }
-  if(hcan->Instance == CAN2)
-  {
-		HAL_CAN_GetRxMessage(&hcan2, CAN_RX_FIFO0,&Can2Header,RxData2);
-    switch (Can2Header.StdId)
-		{
-	    case CAN_UPLIFT_M1_ID:
-			{
-				encoder_data_handle(&MotoData[LeftUpLift],RxData2);
-				err_detector_hook(CAN_UPLIFT_LEFT_OFFLINE);			
-				g_fps[LeftUpLift].cnt ++;						
-			}break;								
-			
-	    case CAN_UPLIFT_M2_ID:
-			{
-				encoder_data_handle(&MotoData[RightUpLift],RxData2);
-				err_detector_hook(CAN_UPLIFT_RIGHT_OFFLINE);		
-				g_fps[RightUpLift].cnt ++;					
-			}break;			
-			
-      case CAN_MASTER_M1_ID:
-			{
-				data2bytes.c[0] = RxData2[0];
-				data2bytes.c[1] = RxData2[1];		
-				
-				logic_data.raw_mode = data2bytes.d; 
-				
-				err_detector_hook(MODE_CTRL_OFFLINE);		
-				g_fps[MasterID].cnt ++;						
-			}break;
-			
-      case CAN_MASTER_M2_ID:
-			{
-			  
-			}break;			
-			default:
-      { 
-      }break;
-    }
-	}	   
+  {	
+   switch (hcan->pRxMsg->StdId)
+	 {
+       case CAN_FLIP_M1_ID:{
+				encoder_data_handle(&MotoData[LeftFlip],can1_rx.Data);			
+				g_fps[LeftFlip].cnt ++;	
+			} break;
+       case CAN_FLIP_M2_ID:{
+				encoder_data_handle(&MotoData[RightFlip],can1_rx.Data);				
+				g_fps[RightFlip].cnt ++;						 
+			} break;	
+       case CAN_SLIP_M1_ID:{
+				encoder_data_handle(&MotoData[MidSlip],can1_rx.Data);		
+				g_fps[MidSlip].cnt ++;					 
+			} break;			
+       case CAN_MASTER_M1_ID:{
+				 
+				logic_data.raw_mode = can1_rx.Data[0];
+				data4bytes.c[0] = can1_rx.Data[1];
+				data4bytes.c[1] = can1_rx.Data[2];
+				data4bytes.c[2] = can1_rx.Data[3];
+				data4bytes.c[3] = can1_rx.Data[4];
+				moto_ctrl[Slip].target = data4bytes.f;
+				g_fps[MasterID].cnt ++;						 
+			} break;	
+       case CAN_MASTER_M2_ID:{
+			 
+			} break;						 
+	   default:
+	    {}
+		break;
+	 }
+	__HAL_CAN_ENABLE_IT(&hcan1,CAN_IT_FMP0);
+ }
 }
+
 /**
   * @brief     get motor rpm and calculate motor round_count/total_encoder/total_angle
   * @param     ptr: Pointer to a moto_measure_t structure
@@ -118,15 +86,16 @@ void encoder_data_handle(moto_param* ptr,uint8_t RxData[8])
 	 {
 		 ptr->init_flag = 1;
 		 ptr->round_cnt = 0;		 
-	   ptr->offset_ecd = (uint16_t)(RxData[0] << 8 | RxData[1]);  
-	   ptr->offset_angle = ptr->offset_ecd/ENCODER_ANGLE_RATIO;  		 
+	   ptr->offset_ecd = (uint16_t)(RxData[0] << 8 | RxData[1]);  	 
+		 if(ptr->offset_ecd > 4096)
+			 ptr->round_cnt --;		
 	 }
 	 else
 	 {
 		 ptr->ecd      = (uint16_t)(RxData[0] << 8 | RxData[1]);  
 		 if (ptr->ecd - ptr->last_ecd > 4096)
 		 {
-			 ptr->round_cnt--;
+			 ptr->round_cnt --;
 		 }
 		 else if (ptr->ecd - ptr->last_ecd < -4096)
 		 {
@@ -134,110 +103,90 @@ void encoder_data_handle(moto_param* ptr,uint8_t RxData[8])
 		 }
 		 ptr->total_ecd = ptr->round_cnt * 8192 + ptr->ecd - ptr->offset_ecd;
 		 /* total angle, unit is degree */
-		 ptr->total_angle = ptr->total_ecd / ENCODER_ANGLE_RATIO; 
+		 ptr->total_angle = ptr->total_ecd / (ENCODER_ANGLE_RATIO * REDUCTION_RATIO); 
 		 ptr->speed_rpm     = (int16_t)(RxData[2] << 8 | RxData[3]);
 		 ptr->current = (int16_t)(RxData[2] << 8 | RxData[3]);
 	 }
 }
-
 /**
-  * @brief  send calculated current to motor
-  * @param  3508 motor ESC id
+ * @brief CAN1 send msg functions using the can transmit_IT
+ * @param 1. can_send_id
+ *				2. data
+ * @return None
+ * @attention you can choose the suitable one to use according 
+ *						to the data type you want to transmit
+ */
+void CAN1_Send_Current(uint32_t id,int16_t cur1,int16_t cur2, int16_t cur3, int16_t cur4 ){
+	hcan1.pTxMsg->StdId = id;
+	hcan1.pTxMsg->IDE = CAN_ID_STD;
+	hcan1.pTxMsg->RTR = CAN_RTR_DATA;
+	hcan1.pTxMsg->DLC = 0x08;	
+	hcan1.pTxMsg->Data[0] = (unsigned char)(cur1 >> 8);
+	hcan1.pTxMsg->Data[1] = (unsigned char)cur1;
+	hcan1.pTxMsg->Data[2] = (unsigned char)(cur2 >> 8);
+	hcan1.pTxMsg->Data[3] = (unsigned char)cur2;
+	hcan1.pTxMsg->Data[4] = (unsigned char)(cur3 >> 8);
+	hcan1.pTxMsg->Data[5] = (unsigned char)cur3;
+	hcan1.pTxMsg->Data[6] = (unsigned char)(cur4 >> 8);
+	hcan1.pTxMsg->Data[7] = (unsigned char)cur4;	
+	HAL_CAN_Transmit_IT(&hcan1);
+}
+/**
+  * @brief  send current which pid calculate to esc. message to calibrate 6020 gimbal motor esc
+  * @param  current value corresponding motor(yaw/pitch/trigger)
   */
-void send_can1_cur(uint32_t id,int16_t iq1, int16_t iq2, int16_t iq3, int16_t iq4)
+void send_can_ms(uint32_t id,int16_t gy,int16_t gz,float angle)
 {
-	  CAN_TxHeader.StdId    = id;
-	  CAN_TxHeader.IDE      = CAN_ID_STD;
-	  CAN_TxHeader.RTR      = CAN_RTR_DATA;
-	  CAN_TxHeader.DLC      = 0x08;
-	  TxData[0] = iq1 >> 8;
-	  TxData[1] = iq1;
-	  TxData[2] = iq2 >> 8;
-	  TxData[3] = iq2;
-	  TxData[4] = iq3 >> 8;
-	  TxData[5] = iq3;
-	  TxData[6] = iq4 >> 8;
-	  TxData[7] = iq4;
-    HAL_CAN_AddTxMessage(&hcan1,&CAN_TxHeader,TxData,(uint32_t *)CAN_TX_MAILBOX0);
+	  hcan1.pTxMsg->StdId = id;
+	  hcan1.pTxMsg->IDE = CAN_ID_STD;
+	  hcan1.pTxMsg->RTR = CAN_RTR_DATA;
+	  hcan1.pTxMsg->DLC = 0x08;
+	  data2bytes.d = gy;
+	  hcan1.pTxMsg->Data[0] = data2bytes.c[0];
+	  hcan1.pTxMsg->Data[1] = data2bytes.c[1];
+	  data2bytes.d = gz; 
+	  hcan1.pTxMsg->Data[2] = data2bytes.c[0];
+	  hcan1.pTxMsg->Data[3] = data2bytes.c[1];
+	  data4bytes.f = angle;
+	  hcan1.pTxMsg->Data[4] = data4bytes.c[0];
+	  hcan1.pTxMsg->Data[5] = data4bytes.c[1];
+	  hcan1.pTxMsg->Data[6] = data4bytes.c[2];
+	  hcan1.pTxMsg->Data[7] = data4bytes.c[3];		
+	  HAL_CAN_Transmit_IT(&hcan1);	
 }
 
-void send_can2_cur(uint32_t id,int16_t iq1, int16_t iq2, int16_t iq3, int16_t iq4)
+void CanFilter_Init(CAN_HandleTypeDef* hcan)
 {
-	  CAN_TxHeader.StdId    = id;
-	  CAN_TxHeader.IDE      = CAN_ID_STD;
-	  CAN_TxHeader.RTR      = CAN_RTR_DATA;
-	  CAN_TxHeader.DLC      = 0x08;
-//	  TxData[0] = iq1 >> 8;
-//	  TxData[1] = iq1;
-//	  TxData[2] = iq2 >> 8;
-//	  TxData[3] = iq2;
-	  TxData[4] = iq3 >> 8;
-	  TxData[5] = iq3;
-	  TxData[6] = iq4 >> 8;
-	  TxData[7] = iq4;
-    HAL_CAN_AddTxMessage(&hcan2,&CAN_TxHeader,TxData,(uint32_t *)CAN_TX_MAILBOX0);
-}
-void send_chassis_ms(uint32_t id,uint8_t data[8])
-{
-	  CAN_TxHeader.StdId    = id;
-	  CAN_TxHeader.IDE      = CAN_ID_STD;
-	  CAN_TxHeader.RTR     = CAN_RTR_DATA;
-	  CAN_TxHeader.DLC     = 0x08;
-	  TxData[0] = data[0];
-	  TxData[1] = data[1];
-	  TxData[2] = data[2];
-	  TxData[3] = data[3];
-	  TxData[4] = data[4];
-	  TxData[5] = data[5];
-	  TxData[6] = data[6];
-	  TxData[7] = data[7];
-    HAL_CAN_AddTxMessage(&hcan1,&CAN_TxHeader,TxData,(uint32_t *)CAN_TX_MAILBOX0);
-}
-
-void can_device_init(void)
-{
-  CAN_FilterTypeDef  can_filter;
+  CAN_FilterConfTypeDef canfilter;
+ 	hcan->pTxMsg = &can1_tx;
+	hcan->pRxMsg = &can1_rx;    
+  //filtrate any ID you want here
+  canfilter.FilterFIFOAssignment = CAN_FILTER_FIFO0;
+  canfilter.FilterActivation = ENABLE;
+  canfilter.FilterMode = CAN_FILTERMODE_IDLIST;
+  canfilter.FilterScale = CAN_FILTERSCALE_16BIT;	
+	canfilter.FilterNumber = 0U;
+  canfilter.FilterIdHigh = ((uint16_t)CAN_FLIP_M1_ID)<<5 ;
+  canfilter.FilterIdLow =  ((uint16_t)CAN_FLIP_M2_ID)<<5 ;
+  canfilter.FilterMaskIdHigh =  ((uint16_t)CAN_SLIP_M1_ID)<<5 ;
+  canfilter.FilterMaskIdLow =  ((uint16_t)CAN_MASTER_M1_ID)<<5 ;
+	HAL_CAN_ConfigFilter(hcan, &canfilter);
 	
-	can_filter.FilterActivation     = ENABLE;
-	can_filter.FilterBank         	= 0U;
-	can_filter.FilterIdHigh         = 0x0000;
-	can_filter.FilterIdLow          = 0x0000;
-	can_filter.FilterMaskIdHigh     = 0x0000;
-	can_filter.FilterMaskIdLow      = 0x0000;
-	can_filter.FilterFIFOAssignment = CAN_FilterFIFO0;
-	can_filter.FilterMode           = CAN_FILTERMODE_IDMASK;
-	can_filter.FilterScale          = CAN_FILTERSCALE_32BIT;
-	can_filter.SlaveStartFilterBank = 14;
-	HAL_CAN_ConfigFilter(&hcan1, &can_filter);
-  //while (HAL_CAN_ConfigFilter(&hcan1, &can_filter) != HAL_OK);
-	
-  can_filter.FilterActivation     = ENABLE;	
-  can_filter.FilterBank         	= 14U;
-	can_filter.FilterMode					  = CAN_FILTERMODE_IDLIST;//列表模式
-	can_filter.FilterScale					= CAN_FILTERSCALE_16BIT;//16位宽
-	can_filter.FilterFIFOAssignment	= CAN_FILTER_FIFO0;
-	can_filter.FilterIdHigh 				= ((uint16_t)CAN_UPLIFT_M1_ID)<<5 ;
-	can_filter.FilterIdLow 					= ((uint16_t)CAN_UPLIFT_M2_ID)<<5;
-	can_filter.FilterMaskIdHigh 		= ((uint16_t)CAN_MASTER_M1_ID)<<5;
-	can_filter.FilterMaskIdLow 			= ((uint16_t)CAN_MASTER_M2_ID)<<5;
-  HAL_CAN_ConfigFilter(&hcan2, &can_filter);	
-  //while (HAL_CAN_ConfigFilter(&hcan2, &can_filter) != HAL_OK);
-}
-
-void can_receive_start(void)
-{
-
-	HAL_CAN_Start(&hcan1);
-	HAL_CAN_ActivateNotification(&hcan1, CAN_IT_RX_FIFO0_MSG_PENDING);	
-	HAL_CAN_Start(&hcan2);
-	HAL_CAN_ActivateNotification(&hcan2, CAN_IT_RX_FIFO0_MSG_PENDING);
-
+  canfilter.FilterFIFOAssignment = CAN_FILTER_FIFO0;
+  canfilter.FilterActivation = ENABLE;
+  canfilter.FilterMode = CAN_FILTERMODE_IDLIST;
+  canfilter.FilterScale = CAN_FILTERSCALE_16BIT;	
+	canfilter.FilterNumber = 1U;
+  canfilter.FilterIdHigh = ((uint16_t)CAN_MASTER_M2_ID)<<5 ;
+  canfilter.FilterIdLow =  ((uint16_t)0)<<5 ;
+  canfilter.FilterMaskIdHigh =  ((uint16_t)0)<<5 ;
+  canfilter.FilterMaskIdLow =  ((uint16_t)0)<<5 ;
+	HAL_CAN_ConfigFilter(hcan, &canfilter);	
 }
 
 void CAN_InitArgument(void)
 {
-		can_device_init();
-		can_receive_start();
+			CanFilter_Init(&hcan1);
+			__HAL_CAN_ENABLE_IT(&hcan1,CAN_IT_FMP0);
+			__HAL_CAN_ENABLE_IT(&hcan1,CAN_IT_TME);
 }
-
-

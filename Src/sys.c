@@ -28,6 +28,10 @@
 void MX_SYS_Init(void)
 {
 
+  /** NOJTAG: JTAG-DP Disabled and SW-DP Enabled 
+  */
+  __HAL_AFIO_REMAP_SWJ_NOJTAG();
+
 }
 
 /* USER CODE BEGIN 1 */

@@ -11,7 +11,7 @@
 #ifndef __RAMP_H__
 #define __RAMP_H__
 
-#include "stm32f4xx_hal.h"
+#include "stm32f1xx_hal.h"
 
 typedef struct
 {

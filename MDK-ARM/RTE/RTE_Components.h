@@ -3,8 +3,8 @@
  * Auto generated Run-Time-Environment Component Configuration File
  *      *** Do not modify ! ***
  *
- * Project: 'TOE_INEER' 
- * Target:  'TOE_INEER' 
+ * Project: 'TOE_INEE' 
+ * Target:  'TOE_INEE' 
  */
 
 #ifndef RTE_COMPONENTS_H

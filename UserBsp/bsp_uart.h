@@ -12,26 +12,23 @@
 #define __BSP_UART_H__
 
 #include "usart.h"
- #include <stdio.h>
-#define UART_RX_DMA_SIZE       1024
+#include <stdio.h>
+
+
 /* usart relevant */
 
-#define BT_usart       huart6 //for debug 
-#define BT_USART       USART6//for debug
-#define BT_DMA_HANDLE       hdma_usart6_rx//for debug
-#define BT_BUFLEN              1
+#define BT_USART                USART3 //for debug
+//#define MX_USART                USART2
 
-void uart1_device_init(void);
-void uart7_device_init(void);
-void uart6_device_init(void);
+#define bt_usart                     huart3 //for dji remote controler reciever
+//#define mx_usart                    huart2
 
-void USER_DMA_INIT(UART_HandleTypeDef *huart, DMA_HandleTypeDef *hdma, uint8_t *Buffer_Adress, uint8_t Buffer_Len);
-void USART_InitArgument(void);
+#define BT_BUFFERLEN        1
+#define MX_BUFFERLEN       10
+
 void uart_receive_handler(UART_HandleTypeDef *huart);
 void 	UART_RX_IDLE_IRQ(UART_HandleTypeDef *huart);
-uint8_t dma_current_memory_target(DMA_Stream_TypeDef *dma_stream);
-uint16_t dma_current_data_counter(DMA_Stream_TypeDef *dma_stream);
-void UART_RX_IDLE_IRQ(UART_HandleTypeDef *huart);
-
-extern  uint8_t uart7_buff[50],uart6_buff[50],uart1_buff[50];
+void USART_InitArgument(void);
+void USER_DMA_INIT(UART_HandleTypeDef *huart, DMA_HandleTypeDef *hdma, uint8_t *bufferAdress, uint8_t bufferLen);
+extern  uint8_t uart2_buff[50],uart3_buff[50];
 #endif

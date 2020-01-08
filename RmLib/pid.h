@@ -8,7 +8,7 @@
 #ifndef __pid_H__
 #define __pid_H__
 
-#include "stm32f4xx_hal.h"
+#include "stm32f1xx_hal.h"
 typedef struct{
 	float kp;
 	float ki;
@@ -54,8 +54,8 @@ void pid_adjust(
 		float ki,
 		float kd);
 		
-extern  PID_Typedef pid_out[3];
-extern  PID_Typedef pid_in[5];
+extern  PID_Typedef pid_out[2];
+extern  PID_Typedef pid_in[3];
 
 
 #endif

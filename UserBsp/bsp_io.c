@@ -1,43 +1,133 @@
 
 /** @file bsp_io.c
- *  @version 4.0
- *  @date Dec 2019
+ *  @version 1.0
+ *  @date  2019  12.19
  *
  *  @brief basic IO port operation
  *
  */
-
+#include "logic_handle_task.h"
 #include "bsp_io.h"
-#include "cmsis_os.h"
-
-
+#include "oled.h"
 
 void evalve_init(void)
 {
-	HAL_GPIO_WritePin(GPIOH, GPIO_PIN_2, GPIO_PIN_RESET);
-	HAL_GPIO_WritePin(GPIOH, GPIO_PIN_3, GPIO_PIN_RESET);
-	HAL_GPIO_WritePin(GPIOH, GPIO_PIN_4, GPIO_PIN_RESET);
-	HAL_GPIO_WritePin(GPIOH, GPIO_PIN_5, GPIO_PIN_RESET);  
+		HAL_GPIO_WritePin(EVALVE_GPIO_PORT	, CLAMP_CTRL, GPIO_PIN_RESET);
+		HAL_GPIO_WritePin(EVALVE_GPIO_PORT	, LENGTH_CTRL, GPIO_PIN_RESET);
+		HAL_GPIO_WritePin(EVALVE_GPIO_PORT	, BOUNCE_CTRL, GPIO_PIN_RESET);
 }
 
-
-void flow_led_on(uint16_t num)
-{	
-    HAL_GPIO_WritePin(GPIOG, GPIO_PIN_8 >> num,0);
-}
-
-void flow_led_off(uint16_t num)
+void led_init(void)
 {
-    HAL_GPIO_WritePin(GPIOG, GPIO_PIN_8 >> num,1);
+
+
 }
 
-void flow_led(void)
-{	
-	 
-   for (int i = 0; i <= 8; i++)
-   {
-	   DETECT_FLOW_LED_ON(i);
-	   osDelay(90);
-	   DETECT_FLOW_LED_OFF(i);
-   }
+void GPIO_InitArgument(void)
+{
+	evalve_init();
+	led_init();
+	oled_init();
 }
+
+uint8_t LEFT_GNS(void)
+{
+	uint8_t i;
+	float sum;
+	float average;
+	for(i=1;i<11;i++)
+	{
+		sum += Left_GNS;
+		average = sum/i;
+	}	
+	if(average >= 0.8)
+		return 1;
+	else
+		return 0;
+}
+
+uint8_t MID_GNS(void)
+{
+	uint8_t i;
+	float sum;
+	float average;
+	for(i=1;i<11;i++)
+	{
+		sum += Mid_GNS;
+		average = sum/i;
+	}	
+	if(average >= 0.8)
+		return 1;
+	else
+		return 0;
+}	
+	
+uint8_t RIGHT_GNS(void)
+{
+	uint8_t i;
+	float sum;
+	float average;
+	for(i=1;i<11;i++)
+	{
+		sum += Right_GNS;
+		average = sum/i;
+	}	
+	if(average >= 0.8)
+		return 1;
+	else
+		return 0;
+}
+
+void GNS_STATE_DETECT(void)
+{
+/* 基恩士状态更新，防抖  */
+			LEFT_GNS();	
+			MID_GNS();
+			RIGHT_GNS();	
+/* 爪子状态更新 获取  */	
+		if(LEFT_GNS() == SET){
+				if(MID_GNS() == SET){
+						if(RIGHT_GNS() == SET){
+							/*  1 1 1 */
+							logic_data.clawState = ERROR_STATE;
+						} 
+						else{
+							/*  1 1 0 */	
+							logic_data.clawState = VV_SHIFT_TO_RIGHT;
+						}
+				}
+				else{
+						if(RIGHT_GNS() == SET){	
+							/*  1 0 1 */						
+							logic_data.clawState = SHIFT_TO_RIGHT;							
+						}
+						else{
+							/*  1 0 0 */	
+							logic_data.clawState = SHIFT_TO_RIGHT;							
+						}						
+				}
+		}
+		else{
+				if(MID_GNS() == SET){
+						if(RIGHT_GNS() == SET){
+							/*  0 1 1 */						
+							logic_data.clawState = VV_SHIFT_TO_LEFT;										
+						}
+						else{
+							/*  0 1 0  */					
+							logic_data.clawState = CORRECT_STATE;
+						}
+				}
+				else{
+						if(RIGHT_GNS() == SET){
+							/*  0 0 1 */					
+							logic_data.clawState = SHIFT_TO_LEFT;										
+						}
+						else{
+							/*  0 0 0 */
+							logic_data.clawState = SHIFT_TO_LEFT;									 
+						}						
+				}		
+		}
+}
+

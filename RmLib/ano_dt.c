@@ -126,7 +126,7 @@ void ANO_DT_Data_Exchange(void)
 }
 void ANO_DT_Send_Data(uint8_t *dataToSend , uint8_t length)
 {
-      HAL_UART_Transmit(&BT_usart,dataToSend,length,20);
+      HAL_UART_Transmit(&bt_usart,dataToSend,length,20);
 }
 
 //void ANO_DT_Data_Receive_Prepare(uint8_t data)

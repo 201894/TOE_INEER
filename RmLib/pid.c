@@ -11,8 +11,8 @@
 #include <string.h>
 #include <stdio.h>
 
-PID_Typedef pid_out[3]       ={0};
-PID_Typedef pid_in[5]         ={0};
+PID_Typedef pid_out[2]       ={0};
+PID_Typedef pid_in[3]         ={0};
 
 /**
  * @brief Absolute PID algorithm

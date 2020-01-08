@@ -9,7 +9,7 @@
 #ifndef  _STMGOOD_H_
 #define _STMGOOD_H_
 
-#include "stm32f4xx.h"
+#include "stm32f1xx.h"
 
 int cmd(char *Cmd,int n);
 void multi1(int n);

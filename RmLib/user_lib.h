@@ -1,7 +1,7 @@
 #ifndef USER_LIB_H
 #define USER_LIB_H
 
-#include "stm32f4xx_hal.h"
+#include "stm32f1xx_hal.h"
 
 typedef struct{
 	int32_t count;

@@ -9,7 +9,7 @@
 #ifndef  __PID_HANDLE_TASK_H__
 #define __PID_HANDLE_TASK_H__
 
-#include "stm32f4xx_hal.h"
+#include "stm32f1xx_hal.h"
 
 void PID_InitArgument(void);
 

@@ -26,12 +26,14 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */     
-#include "bsp_uart.h"
-#include "STMGood.h"
 #include "bsp_can.h"
-#include "pid.h"
-#include "detect_task.h"
+#include "bsp_io.h"
+#include "bsp_uart.h"
+#include "minorThread.h"
 #include "logic_handle_task.h"
+#include "pid.h"
+#include "oled.h"
+#include "adc.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -54,36 +56,24 @@
 
 /* USER CODE END Variables */
 osThreadId defaultTaskHandle;
-osThreadId PID_TASKHandle;
-osThreadId LOGICTASKHandle;
-osThreadId DETECTASKHandle;
+osThreadId PidThreadHandle;
+osThreadId MainTaskHandle;
+osThreadId MinorTakHandle;
 
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
    
 /* USER CODE END FunctionPrototypes */
 
-void debug_task(void const * argument);
-void pid_handle_task(void const * argument);
-void logic_handle_task(void const * argument);
-void detect_task(void const * argument);
+void debugThread(void const * argument);
+void pidThread(void const * argument);
+void mainThread(void const * argument);
+void minorThread(void const * argument);
 
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
 /* GetIdleTaskMemory prototype (linked to static allocation support) */
 void vApplicationGetIdleTaskMemory( StaticTask_t **ppxIdleTaskTCBBuffer, StackType_t **ppxIdleTaskStackBuffer, uint32_t *pulIdleTaskStackSize );
-
-/* Hook prototypes */
-void vApplicationStackOverflowHook(xTaskHandle xTask, signed char *pcTaskName);
-
-/* USER CODE BEGIN 4 */
-__weak void vApplicationStackOverflowHook(xTaskHandle xTask, signed char *pcTaskName)
-{
-   /* Run time stack overflow checking is performed if
-   configCHECK_FOR_STACK_OVERFLOW is defined to 1 or 2. This hook function is
-   called if a stack overflow is detected. */
-}
-/* USER CODE END 4 */
 
 /* USER CODE BEGIN GET_IDLE_TASK_MEMORY */
 static StaticTask_t xIdleTaskTCBBuffer;
@@ -126,20 +116,20 @@ void MX_FREERTOS_Init(void) {
 
   /* Create the thread(s) */
   /* definition and creation of defaultTask */
-  osThreadDef(defaultTask, debug_task, osPriorityNormal, 0, 128);
+  osThreadDef(defaultTask, debugThread, osPriorityIdle, 0, 256);
   defaultTaskHandle = osThreadCreate(osThread(defaultTask), NULL);
 
-  /* definition and creation of PID_TASK */
-  osThreadDef(PID_TASK, pid_handle_task, osPriorityIdle, 0, 256);
-  PID_TASKHandle = osThreadCreate(osThread(PID_TASK), NULL);
+  /* definition and creation of PidThread */
+  osThreadDef(PidThread, pidThread, osPriorityIdle, 0, 256);
+  PidThreadHandle = osThreadCreate(osThread(PidThread), NULL);
 
-  /* definition and creation of LOGICTASK */
-  osThreadDef(LOGICTASK, logic_handle_task, osPriorityIdle, 0, 256);
-  LOGICTASKHandle = osThreadCreate(osThread(LOGICTASK), NULL);
+  /* definition and creation of MainTask */
+  osThreadDef(MainTask, mainThread, osPriorityIdle, 0, 256);
+  MainTaskHandle = osThreadCreate(osThread(MainTask), NULL);
 
-  /* definition and creation of DETECTASK */
-  osThreadDef(DETECTASK, detect_task, osPriorityIdle, 0, 128);
-  DETECTASKHandle = osThreadCreate(osThread(DETECTASK), NULL);
+  /* definition and creation of MinorTak */
+  osThreadDef(MinorTak, minorThread, osPriorityIdle, 0, 128);
+  MinorTakHandle = osThreadCreate(osThread(MinorTak), NULL);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
@@ -147,135 +137,127 @@ void MX_FREERTOS_Init(void) {
 
 }
 
-/* USER CODE BEGIN Header_debug_task */
+/* USER CODE BEGIN Header_debugThread */
 /**
   * @brief  Function implementing the defaultTask thread.
   * @param  argument: Not used 
   * @retval None
   */
-/* USER CODE END Header_debug_task */
-void debug_task(void const * argument)
+/* USER CODE END Header_debugThread */
+void debugThread(void const * argument)
 {
-  /* USER CODE BEGIN debug_task */
+  /* USER CODE BEGIN debugThread */
   /* Infinite loop */
   for(;;)
   {
-		/*
-		typedef enum
-		{
-			LeftUpLift        = 0,  //
-			RightUpLift       = 1,	
-			LeftFlip          = 2,  
-			RightFlip         = 3,
-			MidSlip           = 4,
-			MaxId             = 10,
-		}module_id;
-		*/		
-    #if 1
-			printf("##FPS REVENLENT : ##\r\n");				
-			printf("FPS[LeftUpLift] 		= %d \r\n",g_fps[0].fps);
-			printf("FPS[RightUpLift] 	= %d \r\n",g_fps[1].fps);		
-			printf("FPS[LeftFlip] 				= %d \r\n",g_fps[2].fps);
-			printf("FPS[RightFlip] 			= %d \r\n",g_fps[3].fps);
-			printf("FPS[MidSlip] 				= %d \r\n",g_fps[4].fps);
-			printf("FPS[MasterID] 				= %d \r\n",g_fps[MasterID].fps);		
-		#endif
-    #if 1
-			printf("MOTO ECD REVENLENT : ##\r\n");				
-			printf("MotoData[LeftUpLift] 		= %d \r\n",MotoData[LeftUpLift].ecd);
-			printf("MotoData[RightUpLift] 	= %d \r\n",MotoData[RightUpLift].ecd);		
-			printf("MotoData[LeftFlip] 				= %d \r\n",MotoData[LeftFlip].ecd);		
-			printf("MotoData[RightFlip] 		= %d \r\n",MotoData[RightFlip].ecd);		
-			printf("MotoData[MidSlip] 				= %d \r\n",MotoData[MidSlip].ecd);					
-		#endif		
-		
-    #if 0 
-			printf("UPLIFT PID REVENLENT : ##\r\n");				
-			printf("TargetAngle  	= %.2f\r\n",moto_ctrl[UpLift].target);	
-			printf("CurrentAngle 	= %.2f\r\n",MotoData[LeftUpLift].total_angle);	
-			printf("AngleError  		= #%.2f\r\n",pid_out[UpLift].errNow);	
-			printf("FirstCtrOut  		= %.2f\r\n",pid_out[UpLift].ctrOut);				
-			printf("CurrentSpd 		= %df\r\n",MotoData[LeftUpLift].speed_rpm);	 // MotoData[RightUpLift].speed_rpm
-			printf("SpdError  		    = %.2f\r\n",pid_in[LeftUpLift].ctrOut);			
-			printf("FinalCtrOut  		= %d\r\n",(int16_t)pid_in[LeftUpLift].ctrOut);					
-		#endif			
-    #if 0
-			printf("FLIP PID REVENLENT : ##\r\n");				
-			printf("TargetAngle  	= %.2f\r\n",moto_ctrl[Flip].target);	
-			printf("CurrentAngle 	= %.2f\r\n",MotoData[LeftFlip].total_angle);	
-			printf("AngleError  		= #%.2f\r\n",pid_out[Flip].errNow);	
-			printf("FirstCtrOut  		= %.2f\r\n",pid_out[Flip].ctrOut);				
-			printf("CurrentSpd 		= %df\r\n",MotoData[LeftFlip].speed_rpm);	 // MotoData[RightUpLift].speed_rpm
-			printf("SpdError  		    = %.2f\r\n",pid_in[LeftFlip].ctrOut);			
-			printf("FinalCtrOut  		= %d\r\n",(int16_t)pid_in[LeftFlip].ctrOut);					
-		#endif				
-    #if 0
-			printf("SLIP PID REVENLENT : ##\r\n");				
-			printf("TargetAngle  	= %.2f\r\n",moto_ctrl[Slip].target);	
-			printf("CurrentAngle 	= %.2f\r\n",MotoData[MidSlip].total_angle);	
-			printf("AngleError  		= #%.2f\r\n",pid_out[Slip].errNow);	
-			printf("FirstCtrOut  		= %.2f\r\n",pid_out[Slip].ctrOut);				
-			printf("CurrentSpd 		= %df\r\n",MotoData[MidSlip].speed_rpm);	 // MotoData[RightUpLift].speed_rpm
-			printf("SpdError  		    = %.2f\r\n",pid_in[MidSlip].ctrOut);			
-			printf("FinalCtrOut  		= %d\r\n",(int16_t)pid_in[MidSlip].ctrOut);					
-		#endif			
+
+#if 0
+		printf("##FPS REVENLENT : ##\r\n");		
+		printf("fps[LeftFlip] = %d\r\n",r_fps[LeftFlip].fps);
+		printf("fps[RightFlip] = %d\r\n",r_fps[RightFlip].fps);	
+		printf("fps[MasterID] = %d\r\n",r_fps[MasterID].fps);
+		printf("fps[MidSlip] = %d\r\n",r_fps[MidSlip].fps);    							
+#endif		
+#if 0
+		printf("# MOTO ECD REVENLENT #: \r\n");				
+		//			printf("MotoData[LeftFlip] = %d \r\n",MotoData[LeftFlip].ecd);		
+		//			printf("MotoData[RightFlip] = %d \r\n",MotoData[RightFlip].ecd);		
+		printf("MotoData[MidSlip] = %d \r\n",MotoData[MidSlip].ecd);						
+#endif	
+#if 0
+		printf("# LOGIC DATA REVENLENT #: \r\n");				
+		//			printf("MotoData[LeftFlip] = %d \r\n",MotoData[LeftFlip].ecd);		
+		//			printf("MotoData[RightFlip] = %d \r\n",MotoData[RightFlip].ecd);		
+		printf("Raw_mode = %d \r\n",logic_data.raw_mode);	
+		printf("moto[Slip].target = %.3f\r\n",moto_ctrl[Slip].target);			
+#endif			
+#if 0
+		printf("SLIP PID REVENLENT : ##\r\n");				
+		printf("TargetAngle = %.2f\r\n",moto_ctrl[Slip].target);	
+		printf("CurrentAngle = %.2f\r\n",MotoData[MidSlip].total_angle);	
+		printf("AngleError = #%.2f\r\n",pid_out[Slip].errNow);	
+		printf("FirstCtrOut = %.2f\r\n",pid_out[Slip].ctrOut);				
+		printf("CurrentSpd = %d\r\n",MotoData[MidSlip].speed_rpm);	 // MotoData[RightUpLift].speed_rpm
+		printf("SpdError = %.2f\r\n",pid_in[MidSlip].errNow);			
+		printf("FinalCtrOut = %d\r\n",(int16_t)pid_in[MidSlip].ctrOut);					
+#endif				
+
+#if 1
+		printf("# FLIP PID REVENLENT : #\r\n");				
+		printf("TargetAngle = %.2f\r\n",moto_ctrl[Flip].target);	
+		printf("CurrentAngle = %.2f\r\n",MotoData[LeftFlip].total_angle);	
+		printf("AngleError = %.2f\r\n",pid_out[Flip].errNow);	
+		printf("FirstCtrOut = %.2f\r\n",pid_out[Flip].ctrOut);				
+		printf("CurrentSpd = %d\r\n",MotoData[LeftFlip].speed_rpm);	 // MotoData[RightUpLift].speed_rpm
+		printf("SpdError = %.2f\r\n",pid_in[LeftFlip].errNow);			
+		printf("LeftFlipCtrOut = %d\r\n",(int16_t)pid_in[LeftFlip].ctrOut);
+		printf("RightFlipCtrOut = %d\r\n",(int16_t)pid_in[RightFlip].ctrOut);		
+#endif				
+
+		LED_G_TOG; 
+
+
+		HAL_GPIO_WritePin(EVALVE_GPIO_PORT	, CLAMP_CTRL, OLED_ADC_flag);
+
     osDelay(200);
   }
-  /* USER CODE END debug_task */
+  /* USER CODE END debugThread */
 }
 
-/* USER CODE BEGIN Header_pid_handle_task */
+/* USER CODE BEGIN Header_pidThread */
 /**
-* @brief Function implementing the PID_TASK thread.
+* @brief Function implementing the PidThread thread.
 * @param argument: Not used
 * @retval None
 */
-/* USER CODE END Header_pid_handle_task */
-__weak void pid_handle_task(void const * argument)
+extern uint8_t canFlag;
+
+/* USER CODE END Header_pidThread */
+__weak void pidThread(void const * argument)
 {
-  /* USER CODE BEGIN pid_handle_task */
+  /* USER CODE BEGIN pidThread */
+  /* Infinite loop */
+  for(;;)
+  {
+  }
+  /* USER CODE END pidThread */
+}
+
+/* USER CODE BEGIN Header_mainThread */
+/**
+* @brief Function implementing the MainTask thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_mainThread */
+__weak void mainThread(void const * argument)
+{
+  /* USER CODE BEGIN mainThread */
+  /* Infinite loop */
+  for(;;)
+  {
+
+    osDelay(1000);
+  }
+  /* USER CODE END mainThread */
+}
+
+/* USER CODE BEGIN Header_minorThread */
+/**
+* @brief Function implementing the MinorTak thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_minorThread */
+__weak void minorThread(void const * argument)
+{
+  /* USER CODE BEGIN minorThread */
   /* Infinite loop */
   for(;;)
   {
     osDelay(1);
   }
-  /* USER CODE END pid_handle_task */
-}
-
-/* USER CODE BEGIN Header_logic_handle_task */
-/**
-* @brief Function implementing the LOGICTASK thread.
-* @param argument: Not used
-* @retval None
-*/
-/* USER CODE END Header_logic_handle_task */
-__weak void logic_handle_task(void const * argument)
-{
-  /* USER CODE BEGIN logic_handle_task */
-  /* Infinite loop */
-  for(;;)
-  {
-    osDelay(1);
-  }
-  /* USER CODE END logic_handle_task */
-}
-
-/* USER CODE BEGIN Header_detect_task */
-/**
-* @brief Function implementing the DETECTASK thread.
-* @param argument: Not used
-* @retval None
-*/
-/* USER CODE END Header_detect_task */
-__weak void detect_task(void const * argument)
-{
-  /* USER CODE BEGIN detect_task */
-  /* Infinite loop */
-  for(;;)
-  {
-    osDelay(1);
-  }
-  /* USER CODE END detect_task */
+  /* USER CODE END minorThread */
 }
 
 /* Private application code --------------------------------------------------*/

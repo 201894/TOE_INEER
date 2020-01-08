@@ -1,7 +1,7 @@
 #ifndef _CRC_CHECK_H_
 #define _CRC_CHECK_H_
 
-#include "stm32f4xx_hal.h"
+#include "stm32f1xx_hal.h"
 
 unsigned char Get_CRC8_Check_Sum(unsigned char *pchMessage,unsigned int dwLength,unsigned char ucCRC8);
 unsigned int Verify_CRC8_Check_Sum(unsigned char *pchMessage, unsigned int dwLength);
