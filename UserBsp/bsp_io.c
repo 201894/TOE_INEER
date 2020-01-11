@@ -40,7 +40,7 @@ uint8_t LEFT_GNS(void)
 		sum += Left_GNS;
 		average = sum/i;
 	}	
-	if(average >= 0.8)
+	if(average <= 0.2)
 		return 1;
 	else
 		return 0;
@@ -56,7 +56,7 @@ uint8_t MID_GNS(void)
 		sum += Mid_GNS;
 		average = sum/i;
 	}	
-	if(average >= 0.8)
+	if(average <= 0.2)
 		return 1;
 	else
 		return 0;
@@ -72,7 +72,23 @@ uint8_t RIGHT_GNS(void)
 		sum += Right_GNS;
 		average = sum/i;
 	}	
-	if(average >= 0.8)
+	if(average <= 0.2)
+		return 1;
+	else
+		return 0;
+}
+
+uint8_t FLIP_SWITCH(void)
+{
+	uint8_t i;
+	float sum;
+	float average;
+	for(i=1;i<11;i++)
+	{
+		sum += Flip_SWITCH;
+		average = sum/i;
+	}	
+	if(average <= 0.2)
 		return 1;
 	else
 		return 0;
@@ -84,6 +100,7 @@ void GNS_STATE_DETECT(void)
 			LEFT_GNS();	
 			MID_GNS();
 			RIGHT_GNS();	
+			FLIP_SWITCH();
 /* 爪子状态更新 获取  */	
 		if(LEFT_GNS() == SET){
 				if(MID_GNS() == SET){

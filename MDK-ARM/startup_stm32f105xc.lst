@@ -579,17 +579,17 @@ ARM Macro Assembler    Page 9
               00000000 
 Command Line: --debug --xref --diag_suppress=9931 --cpu=Cortex-M3 --apcs=interw
 ork --depend=toe_inee\startup_stm32f105xc.d -otoe_inee\startup_stm32f105xc.o -I
-..\Inc -IE:\RM2020\RM_ENGINEER\TOE_INEE\MDK-ARM\RTE -IE:\Keil\ARM\PACK\ARM\CMSI
-S\4.2.0\CMSIS\Include -IE:\Keil\ARM\PACK\Keil\STM32F1xx_DFP\2.2.0 --predefine="
-__MICROLIB SETA 1" --predefine="__UVISION_VERSION SETA 514" --predefine="_RTE_ 
-SETA 1" --predefine="STM32F10X_CL SETA 1" --list=startup_stm32f105xc.lst startu
+..\Inc -IE:\RM2020\RM_ENGINEER\TOE_INEER\MDK-ARM\RTE -IE:\Keil\ARM\PACK\ARM\CMS
+IS\4.2.0\CMSIS\Include -IE:\Keil\ARM\PACK\Keil\STM32F1xx_DFP\2.2.0 --predefine=
+"__MICROLIB SETA 1" --predefine="__UVISION_VERSION SETA 514" --predefine="_RTE_
+ SETA 1" --predefine="STM32F10X_CL SETA 1" --list=startup_stm32f105xc.lst start
 
 
 
 ARM Macro Assembler    Page 10 
 
 
-p_stm32f105xc.s
+up_stm32f105xc.s
 
 
 

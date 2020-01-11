@@ -32,18 +32,18 @@ typedef enum
 typedef enum
 {
 	INIT_R_ANGLE = 0,						// 起始 角度
-  MIN_R_ANGLE = 20,					// 卸荷 角度 
-	EVALVE_SELFLOCK_ANGLE = 80,    // 气缸自锁角度
-  MID_R_ANGLE = 90,			    // 扫描 角度 垂直
-  MAX_R_ANGLE = 180,				// 夹取 角度
+  MIN_R_ANGLE = -20,					// 卸荷 角度 
+	EVALVE_SELFLOCK_ANGLE = -110,    // 气缸自锁角度
+  MID_R_ANGLE = -90,			    // 扫描 角度 垂直
+  MAX_R_ANGLE = -180,				// 夹取 角度
 } flip_angle_e;
 
 typedef enum
 {
-  LEFT_S_POSITION	= -300,
+  LEFT_S_POSITION	= -220,
   MID_S_POSITION = 0,	
-  POSITION_DIFFER = 300, 
-  RIGHT_S_POSITION	= 300,	
+  POSITION_DIFFER = 220, 
+  RIGHT_S_POSITION	= 220,	
 	
 } slip_position_e;
 
@@ -58,13 +58,16 @@ typedef struct
 
 typedef struct
 {
-  uint8_t 	raw_mode;		
+  uint8_t 	fetch_mode;		
+	uint8_t   upLiftPosFlag;
 	uint8_t   task_cnt;       //  
 	uint8_t   loop_cnt;
 	uint8_t   endFlag;
 	uint8_t   firstBoxFlag;  // 弹药箱 是否为第一箱 标志位 是 1 否 0
 	uint8_t   boxNumber;   // 已取得 弹药箱 数量
+	uint8_t   upLiftSelfLockFlag;
  	float  CalibratedMidAngle;
+	float  extraUpPos;
   ctrl_mode_e 	global_mode;
 	claw_state_e  clawState;
 	GPIO_PinState clampFlag;	
@@ -78,7 +81,7 @@ extern logic_data_t logic_data;
 void moto_param_init(void);
 void first_row_fetch(void);
 void second_row_fetch(void);
-void Main_Logic_Ctrl(void);
+void fetch_mode_handle(void);
 void slip_target_handle(void);
 void flagClear(void);
 #endif

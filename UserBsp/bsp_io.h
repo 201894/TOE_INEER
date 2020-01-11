@@ -15,10 +15,11 @@
 #define Left_GNS HAL_GPIO_ReadPin(GNS_GPIO_PORT, S_IN1)
 #define Mid_GNS HAL_GPIO_ReadPin(GNS_GPIO_PORT, S_IN2)
 #define Right_GNS HAL_GPIO_ReadPin(GNS_GPIO_PORT, S_IN3)
+#define Flip_SWITCH HAL_GPIO_ReadPin(GNS_GPIO_PORT, S_IN4)
 // EVALVE REVELENT
 #define	 EVALVE_GPIO_PORT GPIOA
 #define CLAMP_CTRL	POWER1_CTRL		
-#define LENGTH_CTRL POWER2_CTRL
+#define LENGTH_CTRL POWER3_CTRL
 #define BOUNCE_CTRL POWER2_CTRL
 // LED REVELENT
 #define 	LED_G_ON   HAL_GPIO_WritePin(GPIOB	, GPIO_PIN_0, GPIO_PIN_RESET)
@@ -34,6 +35,7 @@ void led_init();
 uint8_t LEFT_GNS(void);
 uint8_t MID_GNS(void);
 uint8_t RIGHT_GNS(void);
+uint8_t FLIP_SWITCH(void);
 void GNS_STATE_DETECT(void);
 void GPIO_InitArgument(void);
 

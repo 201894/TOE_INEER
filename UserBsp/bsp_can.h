@@ -76,5 +76,5 @@ void CAN_InitArgument(void);
 
 void  CAN1_Send_Current(uint32_t id,int16_t cur1,int16_t cur2, int16_t cur3, int16_t cur4 );
 void encoder_data_handle(moto_param* ptr,uint8_t RxData[8]);
-void send_can_ms(uint32_t id,int16_t gy,int16_t gz,float angle);
+void send_can_ms(uint32_t id,int16_t slipPos,int16_t flipAngle,uint8_t upLiftFlag);
 #endif

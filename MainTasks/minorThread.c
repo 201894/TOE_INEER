@@ -11,6 +11,7 @@
 #include "minorThread.h"
 #include "cmsis_os.h"
 #include "bsp_io.h"
+#include "logic_handle_task.h"
 #include "freertos.h"
 #include "oled.h"
 #include "adc.h"

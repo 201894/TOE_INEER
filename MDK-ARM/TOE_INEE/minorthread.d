@@ -49,6 +49,7 @@ toe_inee\minorthread.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/event
 toe_inee\minorthread.o: ..\UserBsp\bsp_io.h
 toe_inee\minorthread.o: ../Inc/gpio.h
 toe_inee\minorthread.o: ../Inc/main.h
+toe_inee\minorthread.o: ..\MainTasks\logic_handle_task.h
 toe_inee\minorthread.o: ..\RmLib\oled.h
 toe_inee\minorthread.o: ../Inc/spi.h
 toe_inee\minorthread.o: ../Inc/adc.h

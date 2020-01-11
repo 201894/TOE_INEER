@@ -24,7 +24,7 @@ CanTxMsgTypeDef  				can1_tx;
 CanRxMsgTypeDef  				can1_rx;
 CanTxMsgTypeDef  				can2_tx;
 CanRxMsgTypeDef  				can2_rx;
-wl4data            						data4bytes;    
+wl4data            						data4bytes,data4bytes1;    
 wl2data            						data2bytes;   
 moto_param    						MotoData[3];
 
@@ -52,14 +52,9 @@ void HAL_CAN_RxCpltCallback(CAN_HandleTypeDef* hcan)
 				encoder_data_handle(&MotoData[MidSlip],can1_rx.Data);		
 				g_fps[MidSlip].cnt ++;					 
 			} break;			
-       case CAN_MASTER_M1_ID:{
-				 
-				logic_data.raw_mode = can1_rx.Data[0];
-				data4bytes.c[0] = can1_rx.Data[1];
-				data4bytes.c[1] = can1_rx.Data[2];
-				data4bytes.c[2] = can1_rx.Data[3];
-				data4bytes.c[3] = can1_rx.Data[4];
-				moto_ctrl[Slip].target = data4bytes.f;
+       case CAN_MASTER_M1_ID:{				 
+				logic_data.fetch_mode = can1_rx.Data[0];
+				logic_data.upLiftPosFlag = can1_rx.Data[1];				 
 				g_fps[MasterID].cnt ++;						 
 			} break;	
        case CAN_MASTER_M2_ID:{
@@ -88,7 +83,7 @@ void encoder_data_handle(moto_param* ptr,uint8_t RxData[8])
 		 ptr->round_cnt = 0;		 
 	   ptr->offset_ecd = (uint16_t)(RxData[0] << 8 | RxData[1]);  	 
 		 if(ptr->offset_ecd > 4096)
-			 ptr->round_cnt --;		
+			 ptr->round_cnt ++;		
 	 }
 	 else
 	 {
@@ -135,23 +130,23 @@ void CAN1_Send_Current(uint32_t id,int16_t cur1,int16_t cur2, int16_t cur3, int1
   * @brief  send current which pid calculate to esc. message to calibrate 6020 gimbal motor esc
   * @param  current value corresponding motor(yaw/pitch/trigger)
   */
-void send_can_ms(uint32_t id,int16_t gy,int16_t gz,float angle)
+
+void send_can_ms(uint32_t id,int16_t slipPos,int16_t flipAngle,uint8_t upLiftFlag)
 {
 	  hcan1.pTxMsg->StdId = id;
 	  hcan1.pTxMsg->IDE = CAN_ID_STD;
 	  hcan1.pTxMsg->RTR = CAN_RTR_DATA;
 	  hcan1.pTxMsg->DLC = 0x08;
-	  data2bytes.d = gy;
+	  data2bytes.d = slipPos;
 	  hcan1.pTxMsg->Data[0] = data2bytes.c[0];
 	  hcan1.pTxMsg->Data[1] = data2bytes.c[1];
-	  data2bytes.d = gz; 
+	  data2bytes.d = flipAngle;	
 	  hcan1.pTxMsg->Data[2] = data2bytes.c[0];
-	  hcan1.pTxMsg->Data[3] = data2bytes.c[1];
-	  data4bytes.f = angle;
-	  hcan1.pTxMsg->Data[4] = data4bytes.c[0];
-	  hcan1.pTxMsg->Data[5] = data4bytes.c[1];
-	  hcan1.pTxMsg->Data[6] = data4bytes.c[2];
-	  hcan1.pTxMsg->Data[7] = data4bytes.c[3];		
+	  hcan1.pTxMsg->Data[3] = data2bytes.c[1];		
+//	  data2bytes.d = extarUp;	
+//	  hcan1.pTxMsg->Data[4] = data2bytes.c[0];
+//	  hcan1.pTxMsg->Data[5] = data2bytes.c[1];		
+
 	  HAL_CAN_Transmit_IT(&hcan1);	
 }
 

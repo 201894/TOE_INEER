@@ -31,6 +31,7 @@
 #include "bsp_uart.h"
 #include "minorThread.h"
 #include "logic_handle_task.h"
+#include "logic_handle_task.h"
 #include "pid.h"
 #include "oled.h"
 #include "adc.h"
@@ -119,9 +120,9 @@ void MX_FREERTOS_Init(void) {
   osThreadDef(defaultTask, debugThread, osPriorityIdle, 0, 256);
   defaultTaskHandle = osThreadCreate(osThread(defaultTask), NULL);
 
-  /* definition and creation of PidThread */
-  osThreadDef(PidThread, pidThread, osPriorityIdle, 0, 256);
-  PidThreadHandle = osThreadCreate(osThread(PidThread), NULL);
+//  /* definition and creation of PidThread */
+//  osThreadDef(PidThread, pidThread, osPriorityIdle, 0, 256);
+//  PidThreadHandle = osThreadCreate(osThread(PidThread), NULL);
 
   /* definition and creation of MainTask */
   osThreadDef(MainTask, mainThread, osPriorityIdle, 0, 256);
@@ -151,12 +152,16 @@ void debugThread(void const * argument)
   for(;;)
   {
 
-#if 0
+#if 1
 		printf("##FPS REVENLENT : ##\r\n");		
 		printf("fps[LeftFlip] = %d\r\n",r_fps[LeftFlip].fps);
 		printf("fps[RightFlip] = %d\r\n",r_fps[RightFlip].fps);	
 		printf("fps[MasterID] = %d\r\n",r_fps[MasterID].fps);
-		printf("fps[MidSlip] = %d\r\n",r_fps[MidSlip].fps);    							
+		printf("loop_cnt= %d\r\n",logic_data.loop_cnt);    						
+		printf(".task_cnt = %d\r\n",logic_data.task_cnt);    
+		printf(".fetch_mode = %d\r\n",logic_data.fetch_mode);   		
+		printf(".clawState = %d\r\n",logic_data.clawState);    		
+		printf("CurrentAngle = %.2f\r\n",MotoData[MidSlip].total_angle);	    		
 #endif		
 #if 0
 		printf("# MOTO ECD REVENLENT #: \r\n");				
@@ -182,7 +187,7 @@ void debugThread(void const * argument)
 		printf("FinalCtrOut = %d\r\n",(int16_t)pid_in[MidSlip].ctrOut);					
 #endif				
 
-#if 1
+#if 0
 		printf("# FLIP PID REVENLENT : #\r\n");				
 		printf("TargetAngle = %.2f\r\n",moto_ctrl[Flip].target);	
 		printf("CurrentAngle = %.2f\r\n",MotoData[LeftFlip].total_angle);	
@@ -195,11 +200,8 @@ void debugThread(void const * argument)
 #endif				
 
 		LED_G_TOG; 
-
-
-		HAL_GPIO_WritePin(EVALVE_GPIO_PORT	, CLAMP_CTRL, OLED_ADC_flag);
-
-    osDelay(200);
+		GNS_STATE_DETECT();
+    osDelay(100);
   }
   /* USER CODE END debugThread */
 }
