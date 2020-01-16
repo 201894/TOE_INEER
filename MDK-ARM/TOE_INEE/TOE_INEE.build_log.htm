@@ -26,7 +26,50 @@ Project File Date:  01/08/2020
 
 <h2>Output:</h2>
 Build target 'TOE_INEE'
-"TOE_INEE\TOE_INEE.axf" - 0 Error(s), 0 Warning(s).
+compiling logic_handle_task.c...
+..\MainTasks\logic_handle_task.h(105): warning:  #1-D: last line of file ends without a newline
+  #endif
+..\MainTasks\pid_handle_task.h(16): warning:  #1-D: last line of file ends without a newline
+  #endif
+..\UserBsp\bsp_io.h(34): warning:  #1295-D: Deprecated declaration led_init - give arg types
+  void led_init();
+..\MainTasks\logic_handle_task.c(88): warning:  #188-D: enumerated type mixed with another type
+                HAL_GPIO_WritePin(EVALVE_GPIO_PORT      , BOUNCE_CTRL, logic_data.bounceFlag | logic_data.bounceSelfLockFlag);
+..\MainTasks\logic_handle_task.c(278): warning:  #111-D: statement is unreachable
+                }break;
+..\MainTasks\logic_handle_task.c(283): warning:  #111-D: statement is unreachable
+                }break;  
+..\MainTasks\logic_handle_task.c(288): warning:  #111-D: statement is unreachable
+                }break;  
+..\MainTasks\logic_handle_task.c(293): warning:  #111-D: statement is unreachable
+                }break;         
+..\MainTasks\logic_handle_task.c(298): warning:  #111-D: statement is unreachable
+                }break;
+..\MainTasks\logic_handle_task.c(303): warning:  #111-D: statement is unreachable
+                }break;         
+..\MainTasks\logic_handle_task.c(305): warning:  #940-D: missing return statement at end of non-void function "slipDetect_Action"
+  }
+..\MainTasks\logic_handle_task.c(311): warning:  #940-D: missing return statement at end of non-void function "ToInitPosition_Action"
+  }
+..\MainTasks\logic_handle_task.c(72): warning:  #177-D: function "BounceRotate_SelfLock" was declared but never referenced
+  static void BounceRotate_SelfLock(void)
+..\MainTasks\logic_handle_task.c(151): warning:  #177-D: function "shorten_Action" was declared but never referenced
+  static void shorten_Action(void)
+..\MainTasks\logic_handle_task.c(157): warning:  #177-D: function "bounce_Action" was declared but never referenced
+  static void bounce_Action(void)
+..\MainTasks\logic_handle_task.c(163): warning:  #177-D: function "shrink_Action" was declared but never referenced
+  static void shrink_Action(void)
+..\MainTasks\logic_handle_task.c(169): warning:  #177-D: function "flipToMaxAngle_Action" was declared but never referenced
+  static uint8_t flipToMaxAngle_Action(void)
+..\MainTasks\logic_handle_task.c(180): warning:  #177-D: function "flipToBoAngle_Action" was declared but never referenced
+  static uint8_t flipToBoAngle_Action(void)
+..\MainTasks\logic_handle_task.c(327): warning:  #177-D: function "unload_Action" was declared but never referenced
+  static uint8_t  unload_Action(void)
+..\MainTasks\logic_handle_task.c: 19 warnings, 0 errors
+linking...
+Program Size: Code=24280 RO-data=2676 RW-data=196 ZI-data=9372  
+FromELF: creating hex file...
+"TOE_INEE\TOE_INEE.axf" - 0 Error(s), 19 Warning(s).
 
 <h2>Software Packages used:</h2>
 

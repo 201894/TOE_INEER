@@ -54,7 +54,8 @@ void HAL_CAN_RxCpltCallback(CAN_HandleTypeDef* hcan)
 			} break;			
        case CAN_MASTER_M1_ID:{				 
 				logic_data.fetch_mode = can1_rx.Data[0];
-				logic_data.upLiftPosFlag = can1_rx.Data[1];				 
+				logic_data.upLiftPosFlag = can1_rx.Data[1];			
+				logic_data.upLiftPosMaxFlag = can1_rx.Data[3];							 
 				g_fps[MasterID].cnt ++;						 
 			} break;	
        case CAN_MASTER_M2_ID:{
@@ -144,7 +145,7 @@ void send_can_ms(uint32_t id,int16_t slipPos,int16_t flipAngle,uint8_t upLiftFla
 	  hcan1.pTxMsg->Data[2] = data2bytes.c[0];
 	  hcan1.pTxMsg->Data[3] = data2bytes.c[1];		
 //	  data2bytes.d = extarUp;	
-//	  hcan1.pTxMsg->Data[4] = data2bytes.c[0];
+	  hcan1.pTxMsg->Data[4] = upLiftFlag;
 //	  hcan1.pTxMsg->Data[5] = data2bytes.c[1];		
 
 	  HAL_CAN_Transmit_IT(&hcan1);	

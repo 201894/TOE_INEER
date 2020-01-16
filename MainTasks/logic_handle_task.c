@@ -15,12 +15,18 @@
 #include "pid.h"
 #include "string.h"
 #include "math.h"
+#include "user_lib.h"
 #include "STMGood.h"
 
 #define LOGIC_TASK_PERIOD 5
-#define SLIP_SPEED    		0.1f
+#define THRESHOLD_300MS  300
+#define THRESHOLD_500MS  500
+#define THRESHOLD_1000MS 1000
+#define THRESHOLD_2000MS 2000
+#define SLIP_SPEED    		0.6f
+#define SLIP_ERROR       5.0f
+#define FLIP_ERROR       42.0f
 #define THROW_FLAG    1
-#define EXTRA_UP_POS    60.0f
 moto_ctrl_t moto_ctrl[3]; 
 logic_data_t logic_data;
 
@@ -36,14 +42,41 @@ static uint8_t myDelay(uint16_t millisec)
 		return 0;
 	}
 }
+// 取弹步骤卡顿 处理 退回上一步骤
+static uint8_t task_stall_detect(uint8_t cnt,uint16_t THRESHOLD)
+{
+	 static uint16_t ticks;
+	 static uint8_t now_cnt;
+	 static uint8_t last_cnt;	
+		now_cnt = cnt;	
+		ticks++;	
+		if(ticks >= (uint16_t)(THRESHOLD/LOGIC_TASK_PERIOD)){
+			ticks = 0;		
+			return 1;
+		}
+		if(now_cnt != last_cnt){
+		 ticks = 0;
+		}
+		last_cnt = cnt;
+		return 0;
+}
+uint8_t flip_to_max(float error)
+{
+	if (fabs(MAX_R_ANGLE - MotoData[LeftFlip].total_angle)<=error){
+		return 1; 
+	}
+	else{ 
+		return 0;				
+	}	
+}
 static void BounceRotate_SelfLock(void)
 {
 	/*  夹爪翻转 角度 与 弹气缸 自锁   角度超过中值时 气缸动作 否则恢复初始状态*/
-		if( MotoData[LeftFlip].total_angle >= EVALVE_SELFLOCK_ANGLE){
+		if( MotoData[LeftFlip].total_angle <= EVALVE_SELFLOCK_ANGLE){
 				logic_data.bounceSelfLockFlag = GPIO_PIN_SET;
 		}
 		else{
-				logic_data.bounceSelfLockFlag = GPIO_PIN_RESET;			
+				logic_data.bounceSelfLockFlag = GPIO_PIN_RESET;
 		}
 }
 
@@ -57,7 +90,6 @@ static void BounceEvalve_Ctrl(void)
 
 static void LengthEvalve_Ctrl(void)
 {
-		
 		HAL_GPIO_WritePin(EVALVE_GPIO_PORT	, LENGTH_CTRL, logic_data.lengthFlag);
 }
 
@@ -134,6 +166,28 @@ static void shrink_Action(void)
 }
 																																					/*  电机 单独 动作*/
 /* 翻转至中值  */
+static uint8_t flipToMaxAngle_Action(void)
+{
+		moto_ctrl[Flip].target = MAX_R_ANGLE;	
+		if(angle_accuracy(1.0f)){
+			return 1;
+		}
+		else{
+			return 0;
+		}
+}
+/* 翻转至中值  */
+static uint8_t flipToBoAngle_Action(void)
+{
+		moto_ctrl[Flip].target = EVALVE_SELFLOCK_ANGLE - 10;	
+		if(angle_accuracy(1.0f)){
+			return 1;
+		}
+		else{
+			return 0;
+		}
+}
+/* 翻转至中值  */
 static uint8_t flipToMidAngle_Action(void)
 {
 		moto_ctrl[Flip].target = MID_R_ANGLE;	
@@ -149,7 +203,7 @@ static uint8_t flipToMidAngle_Action(void)
 static uint8_t flipToMinAngle_Action(void)
 {
 		moto_ctrl[Flip].target = MIN_R_ANGLE;	
-		if(angle_accuracy(5.0f)){
+		if(angle_accuracy(30.0f)){
 			return 1;
 		}
 		else{
@@ -182,7 +236,7 @@ static uint8_t slipToInitPosition_Action(void)
 static uint8_t slipToLeftPosition_Action(void)
 { 
 		moto_ctrl[Slip].target = LEFT_S_POSITION + logic_data.CalibratedMidAngle;	
-		if(position_accuracy(1.0f)){
+		if(position_accuracy(2.0f)){
 			return 1;
 		}
 		else{
@@ -205,7 +259,7 @@ static uint8_t slipToMidPosition_Action(void)
 static uint8_t slipToRightPosition_Action(void)
 {
 		moto_ctrl[Slip].target = RIGHT_S_POSITION + logic_data.CalibratedMidAngle;	
-		if(position_accuracy(1.0f)){
+		if(position_accuracy(2.0f)){
 			return 1;
 		}
 		else{
@@ -214,7 +268,7 @@ static uint8_t slipToRightPosition_Action(void)
 }
 
 /* 滑移 检测 动作  */
-static uint8_t slipDetect_Action(void)
+uint8_t slipDetect_Action(void)
 {
   switch (logic_data.clawState)
 	{		
@@ -234,7 +288,7 @@ static uint8_t slipDetect_Action(void)
 		}break;  
 		
 		case SHIFT_TO_RIGHT:{
-			moto_ctrl[Slip].target -= SLIP_SPEED;				
+			moto_ctrl[Slip].target -= SLIP_SPEED;				// 向左平移
 			return 0;
 		}break;		
 		
@@ -253,17 +307,17 @@ static uint8_t slipDetect_Action(void)
 static uint8_t ToInitPosition_Action(void)
 {
 	slipToInitPosition_Action();
-	flipToInitPosition_Action();
+	flipToInitPosition_Action();	
 }
 																																					/* 组合动作 电机+气缸*/
 /* 夹取弹药箱 */
 static uint8_t fetch_Action(void)
 {
 		moto_ctrl[Flip].target = MAX_R_ANGLE;
-		if(angle_accuracy(1.0f)){
+		if(angle_accuracy(FLIP_ERROR)){
 				clamp_Action();
-			return 1;
-		}		
+			 return 1;
+		}
 		else{
 			return 0;
 		}
@@ -293,214 +347,313 @@ static uint8_t throw_Action(void)
 			return 0;
 		}
 }
-
- /*扔远 弹药箱*/
+ /*扔弹药箱*/
 static uint8_t throwFar_Action(void)
 {
 		moto_ctrl[Flip].target = MAX_R_ANGLE;
-		if(angle_accuracy(20.0f)){
+		if(angle_accuracy(100.0f)){
 			loose_Action();
 			return 1;
-		}	
+		}
 		else{
 			return 0;
-		}		
+		}
 }
 static void logicDataReset(void)
 {
 		memset(&logic_data, 0, sizeof(logic_data_t));	
 }
-/*  取弹逻辑  1   第一排 左右两个 包含 恢复至原始位置 */
-void first_row_fetch(void)
-{
-	
-	 switch (logic_data.task_cnt)
-	 {
-		 case 0 :
-		 {
-			 	flipToMidAngle_Action();   //  翻转电机 进入扫描状态
-			  if(! logic_data.firstBoxFlag){					// 判断是否是第一箱弹丸   是第一箱则往左移 否则右移    
-					if(slipToLeftPosition_Action()){  // 滑移电机 左移
-							logic_data.firstBoxFlag = 1;  // 弹药箱数量标志位置1 							
-							logic_data.task_cnt++;
-					}
-			  }
-				else{
-					if(slipToRightPosition_Action()){  // 滑移电机 右移
-							logic_data.task_cnt++;
-					}
-				}
-		 }break;
-		 
-		 case 1:
-		 {
-			 // 待定 后面箱数是否需要 扫描
-				if(slipDetect_Action()){        //  基恩士 -滑移电机  检测 模式
-						logic_data.CalibratedMidAngle =  MotoData[MidSlip].total_angle - LEFT_S_POSITION; // 记录下校准后的电机位置信息
-						logic_data.task_cnt++;
-				}			
-		 }break;
-		 
-		 case 2 :
-		 {
-			  if (fetch_Action()&&angle_accuracy(0.5f)){   // 夹取弹药箱 动作 检测 翻转电机精度 
-						logic_data.task_cnt++;					
-				}
-		 }break;
-		 
-		 case 3:
-		 {
-				if(unload_Action()){     //  卸荷 弹药箱
-						logic_data.task_cnt = 0;	// 任务步骤重置
-				}
-		 }break;
-		 
-		 default:
-		 {
-				
-		 }break;		 
-	 }	
-	 
-}
 
 /*  取弹逻辑  2  */
-void second_row_fetch(void)
+void fetch_ctrl(void)
 {
-		logic_data.extraUpPos =500;
 	 switch (logic_data.task_cnt)
-	 {
-		 case 0 :
-		 {
-			 	flipToMidAngle_Action();   //  翻转电机 进入扫描状态
-				if(logic_data.loop_cnt == 0){
-					if(slipToMidPosition_Action() == 1){  // 滑移电机 
-							if(myDelay(10) == 1){
-							logic_data.loop_cnt ++;														
-								logic_data.task_cnt = 2;
-																		}
-					}						
-				} 							
-				else if(logic_data.loop_cnt == 1){
-					elongation_Action();   //   ***  伸出取弹机构 取第二排
-					if(slipToMidPosition_Action() ==1){  // 滑移电机 右移
-						if(myDelay(500)){
-							logic_data.loop_cnt ++;								
-						  logic_data.task_cnt = 2;				// 取第一箱之后不检测基恩士状态	
-						}							
-					}						
-				} 
-//				else if(logic_data.loop_cnt == 2){
-//					if(slipToMidPosition_Action() == 1){  // 滑移电机  
-//						if(myDelay(10) == 1){
-//							logic_data.loop_cnt ++;													
-//			      	logic_data.task_cnt = 2;				// 取第一箱之后不检测基恩士状态		
-//					}													
-//					}	
-//				}					
-//				else if(logic_data.loop_cnt == 3){
-//					if(slipToRightPosition_Action() == 1){  // 滑移电机 右移
-//								if(myDelay(10) == 1){
-//							logic_data.loop_cnt ++;
-//							logic_data.task_cnt = 2;				// 取第一箱之后不检测基恩士状态				
-//								}									
-//					}
-//				}
-				else{
-					if(slipToInitPosition_Action() == 1){  // 滑移电机 	至初始位置		
-							logic_data.task_cnt = 5;					
-					}	
-				}				
+	 {		 
+		 // 取弹模式判断 
+		 case INIT_TASK:   // 0
+		 {			 
+			 if((slipToInitPosition_Action() == SET)&&flipToInitPosition_Action()){
+				 logic_data.task_cnt++;
+			 }
 		 }break;
-		 
-		 case 1:
+		 case SLIP_TASK1: // 1
 		 {
-			 // 待定 后面箱数是否需要 扫描
-				if(slipDetect_Action() == 1){        //  基恩士 -滑移电机  检测 模式
-					if(logic_data.loop_cnt == 1){
-						logic_data.CalibratedMidAngle =  MotoData[MidSlip].total_angle - MID_S_POSITION; // 记录下校准后的电机位置信息
+				fetch_mode_handle1();
+				if(task_stall_detect(logic_data.task_cnt,THRESHOLD_2000MS)){
+					logic_data.task_cnt --;					 
+				}				 				
+		 }break;
+		 // 第一箱弹丸获取 判断传感器状态 移动爪子至正确位置
+		 case DETECT_TASK:  // 2
+		 {
+				if(slipDetect_Action() == SET){
+					switch (logic_data.fetch_mode)
+					{
+						case FOUR_BOX_FETCH:  // 开局取弹 4箱
+						{		
+							logic_data.CalibratedMidAngle = MotoData[MidSlip].total_angle - MID_S_POSITION;
+						}break;
+						case THREE_BOX_FETCH:
+						case TWO_BOX_FETCH:  // 
+						{
+							logic_data.CalibratedMidAngle = MotoData[MidSlip].total_angle - LEFT_S_POSITION;							
+						}break;				
 					}
-						logic_data.boxNumber ++;				// 真实取箱数		
-						logic_data.task_cnt++;
-				}	
+					logic_data.task_cnt ++;				
+				}					
+//				 if(task_stall_detect(logic_data.task_cnt,THRESHOLD_2000MS)){
+//					logic_data.task_cnt --;					 
+//				 }
 		 }break;
-		 
-		 case 2 :
+		 // 夹取弹药箱 动作 
+		 case CLAMP_TASK:    //3
 		 {
-			  if (fetch_Action()){   // 夹取弹药箱 动作 检测 翻转电机
-						if(myDelay(150) == 1){						
+			  if (fetch_Action() == SET){   	
+						if(angle_accuracy(1.0f)){
+							logic_data.upLiftSelfLockFlag = 1;								
 							logic_data.task_cnt++;		
 						}
 				}
-		 }break; 
-		 
-		 case 3:
+//			 if(task_stall_detect(logic_data.task_cnt,THRESHOLD_2000MS)){
+//				logic_data.task_cnt --;					 
+//			 }
+		 }break;							
+		 case UPLIFT_TASK:  // 5
 		 {
-			#if  THROW_FLAG			 
-					if(flipToMinAngle_Action() == 1){
-						if(myDelay(150) == 1){							
-							logic_data.task_cnt ++;
+				if(logic_data.upLiftPosMaxFlag == SET){					
+						logic_data.task_cnt ++;
+				}
+		 }break;		
+		 // 翻转电机取弹   扔弹药箱 / 弹弹药箱
+		 case UPLOAD_TASK:  // 6
+		 {
+				if(flipToMinAngle_Action() == SET){									
+//						logic_data.task_cnt ++;
+				}
+//				if(flip_to_max(90.0f) == RESET){
+//					logic_data.upLiftSelfLockFlag = 0;
+//				}
+			 if(task_stall_detect(logic_data.task_cnt,THRESHOLD_2000MS)){
+				logic_data.task_cnt --;					 
+			 }
+		 }break;
+		 case SLIP_TASK2: // 7
+		 {
+				fetch_mode_handle2();
+			  if(task_stall_detect(logic_data.task_cnt,THRESHOLD_2000MS)){
+					logic_data.task_cnt --;					 
+			  }
+		 }break;
+		 // 弹弹药箱后续动作
+		 case THROW_TASK:   // 8
+		 {
+			 if(!logic_data.quitFlag){
+					#if THROW_FLAG
+						if(throwFar_Action() == SET){
+								logic_data.task_cnt = CLAMP_TASK;	// 任务步骤重置
 						}
-					}										 
-			#else
-					if(unload_Action()){     //  卸荷 弹药箱
-						logic_data.task_cnt = 0;	// 任务步骤重置
-					}
-			#endif	
-				
-		 }break;
-		 case 4:
+					#else
+						loose_Action();
+						logic_data.task_cnt = CLAMP_TASK;	// 任务步骤重置				
+				 #endif
+				}
+			 else{
+					#if THROW_FLAG
+						if(throw_Action() == SET){
+								logic_data.task_cnt ++;	// 任务步骤重置
+						}
+					#else
+						loose_Action();
+						shorten_Action();						
+						if(flipToBoAngle_Action()==SET){
+							logic_data.task_cnt ++;	// 任务步骤重置				
+						}
+				 #endif
+			 }
+			 if(task_stall_detect(logic_data.task_cnt,THRESHOLD_2000MS)){
+				logic_data.task_cnt --;					 
+			 }
+		 }break; 
+		 // 标志位清零 自锁标志位置SET位
+		 case QUIT_TASK:   // 9
 		 {
-				if(throw_Action() == 1){
-						logic_data.task_cnt = 0;	// 任务步骤重置
-				}	
-		 }break;
-		 case 5:
-		 {
-			 	logicDataReset();
+//			 	logicDataReset();
 				logic_data.endFlag = 1;				
 		 }break;
+		 
 		 default:
-		 {
-				
+		 {				
+			ToInitPosition_Action();		 
 		 }break;		 
-	 }	
-	 
+	 }	 
 }
 
-void fetch_mode_handle(void)
+void fetch_mode_handle2(void)
+{
+			switch (logic_data.fetch_mode)
+			{
+				case FOUR_BOX_FETCH:  // 开局取弹 4箱
+				{
+					 if(logic_data.loop_cnt == 1){
+						elongation_Action();   //   ***  伸出取弹机构 取第二排
+						if(slipToLeftPosition_Action() ==SET){  // 滑移电机 右移
+							if(myDelay(100) == SET){
+								logic_data.loop_cnt ++;
+								logic_data.task_cnt  ++;				// 取第一箱之后不检测基恩士状态	
+							}
+						}
+					}
+					else if(logic_data.loop_cnt == 2){						
+						if(slipToMidPosition_Action() == SET){  // 滑移电机  
+								logic_data.loop_cnt ++;													
+								logic_data.task_cnt ++;				// 取第一箱之后不检测基恩士状态
+
+						}	
+					}
+					else if(logic_data.loop_cnt == 3){
+						if(slipToMidPosition_Action() == SET){  // 滑移电机 右移
+								logic_data.loop_cnt ++;
+								logic_data.task_cnt ++;			// 取第一箱之后不检测基恩士状态			
+						  	logic_data.quitFlag = 1;							
+						}									
+					}	
+
+				}break;	
+				case TWO_BOX_FETCH:  // 开局4分钟  第一排 2箱
+				{
+					 if(logic_data.loop_cnt == 1){
+							if(slipToRightPosition_Action() ==SET){  // 滑移电机 右移
+								if(myDelay(10) == SET){
+									logic_data.loop_cnt ++;								
+									logic_data.task_cnt = CLAMP_TASK;				// 取第一箱之后不检测基恩士状态	
+								}							
+							}						
+						} 	
+						else{
+							if(slipToInitPosition_Action() == SET){  // 滑移电机 	至初始位置		
+									logic_data.task_cnt = QUIT_TASK;					
+							}	
+						}		
+				}break;		
+				case THREE_BOX_FETCH:   // 小资源岛 弹药 三箱
+				{							
+					  if(logic_data.loop_cnt == 1){
+							if(slipToMidPosition_Action() ==SET){  // 滑移电机 右移
+								if(myDelay(10) == SET){
+									logic_data.loop_cnt ++;								
+									logic_data.task_cnt = CLAMP_TASK;				// 取第一箱之后不检测基恩士状态	
+								}							
+							}
+						}
+						else if(logic_data.loop_cnt == 2){
+							if(slipToRightPosition_Action() ==SET){  // 滑移电机 右移
+								if(myDelay(10) == SET){
+									logic_data.loop_cnt ++;								
+									logic_data.task_cnt = CLAMP_TASK;				// 取第一箱之后不检测基恩士状态	
+								}							
+							}						
+						}							
+						else{
+							if(slipToInitPosition_Action() == SET){  // 滑移电机 	至初始位置		
+									logic_data.task_cnt = QUIT_TASK;					
+							}							
+						}						
+				}break;				
+			}				
+
+}
+void fetch_mode_handle1(void)
 {
 		if(logic_data.upLiftPosFlag){
 			switch (logic_data.fetch_mode)
 			{
-				case 0:
+				case NULL_FETCH:
 				{
-					logicDataReset();
-				  ToInitPosition_Action();
+					ToInitPosition_Action();				
 				}break;
-				case 1:
-				{					
-					if(!logic_data.endFlag){
-						second_row_fetch();	
+				case FOUR_BOX_FETCH:  // 开局取弹 4箱
+				{
+						flipToMidAngle_Action();   //  翻转电机 进入扫描状态
+						if(slipToMidPosition_Action() == SET){  // 滑移电机 
+								logic_data.loop_cnt ++;
+								logic_data.task_cnt ++;
+						}
+				}break;		
+				case TWO_BOX_FETCH:  // 开局4分钟  第一排 2箱
+				{
+					if(logic_data.endFlag == RESET){					
+						flipToMidAngle_Action();   //  翻转电机 进入扫描状态
+						if(logic_data.loop_cnt == 0){
+							if(slipToLeftPosition_Action() == SET){  // 滑移电机 
+									if(myDelay(10) == SET){
+										logic_data.loop_cnt ++;														
+										logic_data.task_cnt ++;
+								}
+							}
+						}
+						else if(logic_data.loop_cnt == 1){
+							if(slipToRightPosition_Action() ==SET){  // 滑移电机 右移
+								if(myDelay(10) == SET){
+									logic_data.loop_cnt ++;								
+									logic_data.task_cnt = CLAMP_TASK;				// 取第一箱之后不检测基恩士状态	
+								}							
+							}						
+						} 	
+						else{
+							if(slipToInitPosition_Action() == SET){  // 滑移电机 	至初始位置		
+									logic_data.task_cnt = QUIT_TASK;					
+							}	
+						}		
 					}
 					else{
-						ToInitPosition_Action();
-					}		
-				}break;		
-				case 2:
-				{
-					
+						ToInitPosition_Action();					
+					}
 				}break;	
-				case 3:
+				case THREE_BOX_FETCH:   // 小资源岛 弹药 三箱
 				{
-					
-				}break;		
-				 default:
-				 {
-						
-				 }break;		
+					if(logic_data.endFlag == RESET){					
+						flipToMidAngle_Action();   //  翻转电机 进入扫描状态
+						if(logic_data.loop_cnt == 0){
+							if(slipToLeftPosition_Action() == SET){  // 滑移电机 
+									if(myDelay(10) == SET){
+									logic_data.loop_cnt ++;														
+										logic_data.task_cnt = CLAMP_TASK;
+								}
+							}						
+						} 							
+						else if(logic_data.loop_cnt == 1){
+							if(slipToMidPosition_Action() ==SET){  // 滑移电机 右移
+								if(myDelay(10) == SET){
+									logic_data.loop_cnt ++;								
+									logic_data.task_cnt = CLAMP_TASK;				// 取第一箱之后不检测基恩士状态	
+								}							
+							}						
+						}
+						else if(logic_data.loop_cnt == 2){
+							if(slipToRightPosition_Action() ==SET){  // 滑移电机 右移
+								if(myDelay(10) == SET){
+									logic_data.loop_cnt ++;
+									logic_data.task_cnt = CLAMP_TASK;				// 取第一箱之后不检测基恩士状态	
+								}
+							}
+						}
+						else{
+							if(slipToInitPosition_Action() == SET){  // 滑移电机 	至初始位置		
+									logic_data.task_cnt = QUIT_TASK;					
+							}
+						}
+					}
+					else{
+						ToInitPosition_Action();					
+					}						
+				}break;	
+				default:
+				{
+					ToInitPosition_Action();		 
+				}break;		 				
 			}
-		}
-	
+			logic_data.last_fetch_mode = logic_data.fetch_mode;
+	  }	
 }
 
 void mainThread(void const * argument)
@@ -514,9 +667,20 @@ void mainThread(void const * argument)
 		taskENTER_CRITICAL();
 		/*GNS MX REVELENT*/
 		GlobalEvalve_Ctrl();
-		fetch_mode_handle();
-		send_can_ms(CAN_SEND_M1_ID,(int16_t)(int16_t)moto_ctrl[Slip].target, \
-		 (int16_t)moto_ctrl[Flip].target,0);
+    if(logic_data.fetch_mode != NULL_FETCH){
+			if(logic_data.endFlag == RESET){
+				fetch_ctrl();
+			}
+			else{
+				ToInitPosition_Action();					
+			}
+		}
+		else{
+					logicDataReset();
+					ToInitPosition_Action();			
+		}
+		send_can_ms(CAN_SEND_M1_ID,(int16_t)moto_ctrl[Slip].target, \
+		 (int16_t)moto_ctrl[Flip].target,logic_data.upLiftSelfLockFlag);
 
 		taskEXIT_CRITICAL();
     osDelayUntil(&MainThreadLastWakeTime,LOGIC_TASK_PERIOD);			

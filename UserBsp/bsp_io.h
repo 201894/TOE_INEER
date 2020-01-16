@@ -12,9 +12,9 @@
 #include  "gpio.h"
 
 // GNS REVELENT
-#define Left_GNS HAL_GPIO_ReadPin(GNS_GPIO_PORT, S_IN1)
-#define Mid_GNS HAL_GPIO_ReadPin(GNS_GPIO_PORT, S_IN2)
-#define Right_GNS HAL_GPIO_ReadPin(GNS_GPIO_PORT, S_IN3)
+#define Left_OMRON HAL_GPIO_ReadPin(GNS_GPIO_PORT, S_IN3)
+#define Mid_OMRON HAL_GPIO_ReadPin(GNS_GPIO_PORT, S_IN1)
+#define Right_OMRON HAL_GPIO_ReadPin(GNS_GPIO_PORT, S_IN4)
 #define Flip_SWITCH HAL_GPIO_ReadPin(GNS_GPIO_PORT, S_IN4)
 // EVALVE REVELENT
 #define	 EVALVE_GPIO_PORT GPIOA
@@ -32,11 +32,11 @@
 void evalve_init(void);
 //void evalve_ctrl(void);
 void led_init();
-uint8_t LEFT_GNS(void);
-uint8_t MID_GNS(void);
-uint8_t RIGHT_GNS(void);
+uint8_t LEFT_OMRON(void);
+uint8_t MID_OMRON(void);
+uint8_t RIGHT_OMRON(void);
 uint8_t FLIP_SWITCH(void);
-void GNS_STATE_DETECT(void);
+void OMRON_STATE_DETECT(void);
 void GPIO_InitArgument(void);
 
 #endif

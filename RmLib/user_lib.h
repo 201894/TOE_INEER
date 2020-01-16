@@ -63,6 +63,8 @@ extern int16_t int16_deadline(int16_t Value, int16_t minValue, int16_t maxValue)
 //限幅函数
 extern float float_constrain(float Value, float minValue, float maxValue);
 //限幅函数
+extern uint8_t uint8_constrain(uint8_t Value, uint8_t minValue, uint8_t maxValue);
+//限幅函数
 extern int16_t int16_constrain(int16_t Value, int16_t minValue, int16_t maxValue);
 //循环限幅函数
 extern float loop_float_constrain(float Input, float minValue, float maxValue);

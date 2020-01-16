@@ -174,6 +174,16 @@ float float_constrain(float Value, float minValue, float maxValue)
 }
 
 //限幅函数
+uint8_t uint8_constrain(uint8_t Value, uint8_t minValue, uint8_t maxValue)
+{
+    if (Value < minValue)
+        return minValue;
+    else if (Value > maxValue)
+        return maxValue;
+    else
+        return Value;
+}
+//限幅函数
 int16_t int16_constrain(int16_t Value, int16_t minValue, int16_t maxValue)
 {
     if (Value < minValue)

@@ -153,15 +153,17 @@ void debugThread(void const * argument)
   {
 
 #if 1
-		printf("##FPS REVENLENT : ##\r\n");		
+		printf("##FETCH REVENLENT : ##\r\n");		
 		printf("fps[LeftFlip] = %d\r\n",r_fps[LeftFlip].fps);
 		printf("fps[RightFlip] = %d\r\n",r_fps[RightFlip].fps);	
 		printf("fps[MasterID] = %d\r\n",r_fps[MasterID].fps);
 		printf("loop_cnt= %d\r\n",logic_data.loop_cnt);    						
 		printf(".task_cnt = %d\r\n",logic_data.task_cnt);    
 		printf(".fetch_mode = %d\r\n",logic_data.fetch_mode);   		
-		printf(".clawState = %d\r\n",logic_data.clawState);    		
-		printf("CurrentAngle = %.2f\r\n",MotoData[MidSlip].total_angle);	    		
+		printf(".clawState = %d\r\n",logic_data.clawState);    			
+		printf("CurrentAngle = %.2f\r\n",MotoData[MidSlip].total_angle);	    	
+		printf("TargetAngle = %.3f\r\n",moto_ctrl[Slip].target);	
+		printf("TargetAngle = %.3f\r\n",moto_ctrl[Flip].target);			
 #endif		
 #if 0
 		printf("# MOTO ECD REVENLENT #: \r\n");				
@@ -200,7 +202,7 @@ void debugThread(void const * argument)
 #endif				
 
 		LED_G_TOG; 
-		GNS_STATE_DETECT();
+		OMRON_STATE_DETECT();
     osDelay(100);
   }
   /* USER CODE END debugThread */

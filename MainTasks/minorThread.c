@@ -217,21 +217,22 @@ void OLED_CTRL(void)
 				oled_shownum(3,14,r_fps[MidSlip].fps,0x00,4);					
 				
 				oled_printf(4,2,"MARID FPS");			
-				oled_shownum(4,14,r_fps[MasterID].fps,0x00,4);	
-					
+				oled_shownum(4,14,r_fps[MasterID].fps,0x00,4);						
 			}break;
 			case 2 :
 			{
 				/*OLED PRINTF GNS STATE REVELENT*/
+				oled_printf(1,3,"LEFT_OMRON");
+				oled_shownum(1,14,LEFT_OMRON(),0x00,4);	
 
-				oled_printf(1,3,"LEFT_GNS");
-				oled_shownum(1,14,LEFT_GNS(),0x00,4);	
-
-				oled_printf(2,3,"MIDD_GNS");				
-			  oled_shownum(2,14,MID_GNS(),0x00,4);	
+				oled_printf(2,3,"MIDD_OMRON");				
+			  oled_shownum(2,14,MID_OMRON(),0x00,4);	
 				
-				oled_printf(3,3,"RIGT_GNS");	
-				oled_shownum(3,14,RIGHT_GNS(),0x00,4);						
+				oled_printf(3,3,"RIGT_OMRON");	
+				oled_shownum(3,14,RIGHT_OMRON(),0x00,4);					
+		
+				oled_printf(4,3,"Claw_State");	
+				oled_shownum(4,14,logic_data.clawState,0x00,4);							
 			}break;
 			case 3 :
 			{
@@ -246,7 +247,7 @@ void OLED_CTRL(void)
 				
 			}break;						
 		}
-				
+			
     oled_refresh_gram();	
 }
 

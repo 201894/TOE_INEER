@@ -53,4 +53,5 @@ toe_inee\logic_handle_task.o: ../Inc/main.h
 toe_inee\logic_handle_task.o: ..\RmLib\pid.h
 toe_inee\logic_handle_task.o: E:\Keil\ARM\ARMCC\Bin\..\include\string.h
 toe_inee\logic_handle_task.o: E:\Keil\ARM\ARMCC\Bin\..\include\math.h
+toe_inee\logic_handle_task.o: ..\RmLib\user_lib.h
 toe_inee\logic_handle_task.o: ..\RmLib\STMGood.h
